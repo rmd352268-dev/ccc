@@ -593,137 +593,6 @@ class ServerControllerApp:
         )
         start_chk.pack(anchor="w")
 
-        # Row 2: Tor Onion Daemon
-        f2 = tk.Frame(status_box, bg="#0f172a")
-        f2.pack(fill="x", pady=2)
-        self.tor_indicator = tk.Label(f2, text="○", font=("Segoe UI", 10, "bold"), fg="#64748b", bg="#0f172a")
-        self.tor_indicator.pack(side="left")
-        tk.Label(f2, text=" Tor Onion Service", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
-        self.tor_val = tk.Label(f2, text="Checking...", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg="#0f172a")
-        self.tor_val.pack(side="right")
-
-        # Row 3: Telegram Admin Bot Daemon
-        f3 = tk.Frame(status_box, bg="#0f172a")
-        f3.pack(fill="x", pady=2)
-        self.bot_indicator = tk.Label(f3, text="○", font=("Segoe UI", 10, "bold"), fg="#64748b", bg="#0f172a")
-        self.bot_indicator.pack(side="left")
-        tk.Label(f3, text=" 🤖 Telegram Admin Bot", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
-        self.bot_val = tk.Label(f3, text="Checking...", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg="#0f172a")
-        self.bot_val.pack(side="right")
-
-        # Row 4: Auto Git Sync Engine
-        f4 = tk.Frame(status_box, bg="#0f172a")
-        f4.pack(fill="x", pady=2)
-        self.git_indicator = tk.Label(f4, text="●", font=("Segoe UI", 10, "bold"), fg="#22c55e", bg="#0f172a")
-        self.git_indicator.pack(side="left")
-        tk.Label(f4, text=" 🚀 Auto Git Sync (GitHub)", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
-        self.git_val = tk.Label(f4, text="Active & Live", font=("Segoe UI", 9, "bold"), fg="#4ade80", bg="#0f172a")
-        self.git_val.pack(side="right")
-
-        # Action Buttons
-        btn_frame = tk.Frame(card, bg="#1e293b")
-        btn_frame.pack(fill="x", pady=4)
-
-        self.copy_btn = tk.Button(
-            btn_frame,
-            text="📋 Copy Onion Link",
-            font=("Segoe UI", 9, "bold"),
-            bg="#2563eb",
-            fg="white",
-            activebackground="#1d4ed8",
-            relief="flat",
-            cursor="hand2",
-            padx=8,
-            pady=6,
-            command=self.copy_onion_link
-        )
-        self.copy_btn.pack(side="left", fill="x", expand=True, padx=(0, 3))
-
-        self.open_local_btn = tk.Button(
-            btn_frame,
-            text="🌐 Open Localhost",
-            font=("Segoe UI", 9, "bold"),
-            bg="#0284c7",
-            fg="white",
-            activebackground="#0369a1",
-            relief="flat",
-            cursor="hand2",
-            padx=8,
-            pady=6,
-            command=self.open_localhost
-        )
-        self.open_local_btn.pack(side="right", fill="x", expand=True, padx=(3, 0))
-
-        # Telegram Open Button
-        tg_btn = tk.Button(
-            card,
-            text="📱 Open Telegram Admin Bot (@MypayteAdmin_Bot)",
-            font=("Segoe UI", 8, "bold"),
-            bg="#0284c7",
-            fg="white",
-            activebackground="#0369a1",
-            relief="flat",
-            cursor="hand2",
-            padx=8,
-            pady=5,
-            command=lambda: webbrowser.open("https://t.me/MypayteAdmin_Bot")
-        )
-        tg_btn.pack(fill="x", pady=2)
-
-        # Git Push Button
-        git_btn = tk.Button(
-            card,
-            text="🔄 Sync & Push to GitHub Now",
-            font=("Segoe UI", 8, "bold"),
-            bg="#16a34a",
-            fg="white",
-            activebackground="#15803d",
-            relief="flat",
-            cursor="hand2",
-            padx=8,
-            pady=5,
-            command=self.push_to_git_now
-        )
-        git_btn.pack(fill="x", pady=2)
-
-        # Copied alert label (fadeable)
-        self.alert_lbl = tk.Label(card, text="", font=("Segoe UI", 8), fg="#4ade80", bg="#1e293b")
-        self.alert_lbl.pack(pady=(2, 0))
-
-        # Bottom Options
-        opts_frame = tk.Frame(self.root, bg="#0f172a")
-        opts_frame.pack(fill="x", padx=16, pady=(0, 10))
-
-        # Always on top check
-        top_chk = tk.Checkbutton(
-            opts_frame,
-            text="📌 Keep on top (Floating)",
-            variable=self.always_on_top,
-            font=("Segoe UI", 8),
-            fg="#94a3b8",
-            bg="#0f172a",
-            selectcolor="#1e293b",
-            activebackground="#0f172a",
-            activeforeground="#38bdf8",
-            command=self.toggle_topmost
-        )
-        top_chk.pack(anchor="w")
-
-        # Autostart with windows check
-        start_chk = tk.Checkbutton(
-            opts_frame,
-            text="🚀 Auto-start server & bot when PC turns on",
-            variable=self.autostart_var,
-            font=("Segoe UI", 8),
-            fg="#94a3b8",
-            bg="#0f172a",
-            selectcolor="#1e293b",
-            activebackground="#0f172a",
-            activeforeground="#38bdf8",
-            command=self.toggle_autostart
-        )
-        start_chk.pack(anchor="w")
-
     def toggle_topmost(self):
         self.root.attributes("-topmost", self.always_on_top.get())
 
@@ -791,10 +660,14 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
             self.tor_status = tor_ok
             self.bot_status = bot_ok
 
-            self.root.after(0, self.update_ui_state, php_ok, tor_ok, bot_ok)
+            if self.authenticated:
+                self.root.after(0, self.update_ui_state, php_ok, tor_ok, bot_ok)
             time.sleep(1.0)
 
     def update_ui_state(self, php_ok, tor_ok, bot_ok):
+        if not self.authenticated:
+            return
+
         if php_ok and tor_ok:
             self.is_running = True
             self.badge_lbl.config(text="ONLINE", fg="#22c55e", bg="#064e3b")
@@ -875,7 +748,8 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
                         creationflags=0x08000000 | 0x00000200 | 0x00000008  # Detached process
                     )
             
-            self.root.after(0, lambda: self.show_alert("Starting Tor, Laravel, and Telegram Bot...", "#38bdf8"))
+            if self.authenticated:
+                self.root.after(0, lambda: self.show_alert("Starting Tor, Laravel, and Telegram Bot...", "#38bdf8"))
         
         threading.Thread(target=_start, daemon=True).start()
 
@@ -886,7 +760,8 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
                 subprocess.run('taskkill /F /IM php.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
             except Exception:
                 pass
-            self.root.after(0, lambda: self.show_alert("Server stopped. Website is now OFFLINE.", "#f87171"))
+            if self.authenticated:
+                self.root.after(0, lambda: self.show_alert("Server stopped. Website is now OFFLINE.", "#f87171"))
 
         threading.Thread(target=_stop, daemon=True).start()
 
@@ -913,8 +788,9 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
         threading.Thread(target=_run, daemon=True).start()
 
     def show_alert(self, msg, color="#4ade80"):
-        self.alert_lbl.config(text=msg, fg=color)
-        self.root.after(4000, lambda: self.alert_lbl.config(text=""))
+        if hasattr(self, "alert_lbl") and self.alert_lbl.winfo_exists():
+            self.alert_lbl.config(text=msg, fg=color)
+            self.root.after(4000, lambda: self.alert_lbl.config(text="") if self.alert_lbl.winfo_exists() else None)
 
     def on_close(self):
         self.monitor_active = False
