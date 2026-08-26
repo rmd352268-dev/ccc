@@ -143,7 +143,7 @@
                 </button>
             </form>
         </div>
-        <div>{{ $users->links() }}</div>
+        <div>{{ $users->links('vendor.pagination.custom') }}</div>
     </div>
 </div>
 

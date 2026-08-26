@@ -128,7 +128,7 @@
                 </button>
             </form>
         </div>
-        <div>{{ $cards->links() }}</div>
+        <div>{{ $cards->links('vendor.pagination.custom') }}</div>
     </div>
 </div>
 @endsection

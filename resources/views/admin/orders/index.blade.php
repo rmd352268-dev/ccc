@@ -64,7 +64,7 @@
                 </button>
             </form>
         </div>
-        <div>{{ $orders->links() }}</div>
+        <div>{{ $orders->links('vendor.pagination.custom') }}</div>
     </div>
 </div>
 @endsection
