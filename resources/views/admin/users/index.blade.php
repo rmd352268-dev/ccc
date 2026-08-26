@@ -228,6 +228,13 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label class="form-label" style="color: #F59E0B;">Vault Activation Status</label>
+                    <select name="is_activated" id="edit_is_activated" class="form-select">
+                        <option value="1">Activated (Vault Unlocked - Can browse cards)</option>
+                        <option value="0">Locked (Requires deposit to unlock)</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label" style="color: #3B82F6;">Reset Primary Password</label>
                     <input type="text" name="new_password" class="form-control" placeholder="Leave empty to keep current">
                 </div>
@@ -283,6 +290,13 @@
                     <input type="text" name="secondary_password" class="form-control" placeholder="4-6 digit PIN">
                 </div>
                 <div class="form-group">
+                    <label class="form-label" style="color: #F59E0B;">Vault Activation</label>
+                    <select name="is_activated" class="form-select">
+                        <option value="0">Locked (Requires deposit)</option>
+                        <option value="1">Activated (Unlock immediately)</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Telegram</label>
                     <input type="text" name="telegram" class="form-control" placeholder="@telegram_handle">
                 </div>
@@ -313,6 +327,7 @@ function openEditUserModal(user) {
     document.getElementById('edit_country').value = user.country || 'US';
     document.getElementById('edit_tier').value = user.tier || 'Verified Member';
     document.getElementById('edit_status').value = user.status || 'active';
+    document.getElementById('edit_is_activated').value = (user.is_activated == 1 || user.is_activated === true) ? '1' : '0';
     
     document.getElementById('edit-user-modal').classList.add('active');
 }

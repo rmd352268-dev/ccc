@@ -54,7 +54,7 @@
         <div style="font-size: 26px; font-weight: 800; color: var(--text-primary); margin-top: 8px; font-family: 'JetBrains Mono', monospace;">
             ${{ number_format($userBalance, 2) }}
         </div>
-        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Total Recharge: ${{ number_format($totalRecharge, 2) }}</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Total Recharge: ${{ number_format($totalRecharge, 2) }} &bull; {{ $totalUsers }} Registered ({{ $activeUsers ?? $totalUsers }} Active)</div>
     </div>
 </div>
 
