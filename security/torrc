@@ -1,0 +1,20 @@
+# ==============================================================================
+# TOR DAEMON CONFIGURATION (torrc)
+# ==============================================================================
+# Place this file or append its content to:
+# - Linux: /etc/tor/torrc
+# - Windows: <TorDirectory>\Data\Tor\torrc
+# ==============================================================================
+
+# Enable Tor Hidden Service for this Laravel Application
+HiddenServiceDir /var/lib/tor/laravel_onion_service/
+HiddenServicePort 80 127.0.0.1:80
+HiddenServiceVersion 3
+
+# Security & Anonymity Hardening
+SafeLogging 1
+DataDirectory /var/lib/tor
+
+# Avoid running as an exit node or relay (Hidden Service only)
+ExitRelay 0
+ClientOnly 1
