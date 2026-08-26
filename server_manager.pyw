@@ -60,8 +60,8 @@ def get_admin_credentials():
 class ServerControllerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("⚡ Server & Bot Controller - Security Enclave")
-        self.root.geometry("400x640")
+        self.root.title("⚡ Website & Bot Live Switcher")
+        self.root.geometry("410x680")
         self.root.resizable(False, False)
         self.root.configure(bg="#0f172a")  # Dark Slate
 
@@ -101,7 +101,7 @@ class ServerControllerApp:
         # Handle window close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        # Auto-start services on app open in background
+        # Auto-start background services on app launch
         self.root.after(300, self.start_services)
 
     # -------------------------------------------------------------
@@ -491,7 +491,7 @@ class ServerControllerApp:
         self.git_val = tk.Label(f4, text="Active & Live", font=("Segoe UI", 8.5, "bold"), fg="#4ade80", bg="#0f172a")
         self.git_val.pack(side="right")
 
-        # Action Buttons
+        # Action Buttons (Row: Copy Onion & Open Localhost)
         btn_frame = tk.Frame(card, bg="#1e293b")
         btn_frame.pack(fill="x", pady=3)
 
@@ -505,7 +505,7 @@ class ServerControllerApp:
             relief="flat",
             cursor="hand2",
             padx=6,
-            pady=5,
+            pady=6,
             command=self.copy_onion_link
         )
         self.copy_btn.pack(side="left", fill="x", expand=True, padx=(0, 3))
@@ -520,7 +520,7 @@ class ServerControllerApp:
             relief="flat",
             cursor="hand2",
             padx=6,
-            pady=5,
+            pady=6,
             command=self.open_localhost
         )
         self.open_local_btn.pack(side="right", fill="x", expand=True, padx=(3, 0))
@@ -529,33 +529,33 @@ class ServerControllerApp:
         tg_btn = tk.Button(
             card,
             text="📱 Open Telegram Admin Bot (@MypayteAdmin_Bot)",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", 8.5, "bold"),
             bg="#0284c7",
             fg="white",
             activebackground="#0369a1",
             relief="flat",
             cursor="hand2",
             padx=6,
-            pady=4,
+            pady=6,
             command=lambda: webbrowser.open("https://t.me/MypayteAdmin_Bot")
         )
-        tg_btn.pack(fill="x", pady=2)
+        tg_btn.pack(fill="x", pady=3)
 
         # Git Push Button
         git_btn = tk.Button(
             card,
             text="🔄 Sync & Push to GitHub Now",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", 8.5, "bold"),
             bg="#16a34a",
             fg="white",
             activebackground="#15803d",
             relief="flat",
             cursor="hand2",
             padx=6,
-            pady=4,
+            pady=6,
             command=self.push_to_git_now
         )
-        git_btn.pack(fill="x", pady=2)
+        git_btn.pack(fill="x", pady=3)
 
         # Copied alert label (fadeable)
         self.alert_lbl = tk.Label(card, text="", font=("Segoe UI", 8), fg="#4ade80", bg="#1e293b")
