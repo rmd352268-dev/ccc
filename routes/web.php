@@ -130,6 +130,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');
     Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
     Route::post('/users/{id}/update', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::post('/users/{id}/toggle-activate', [AdminController::class, 'toggleActivateUser'])->name('users.toggleActivate');
     Route::post('/users/{id}/toggle-suspend', [AdminController::class, 'toggleSuspendUser'])->name('users.toggleSuspend');
     Route::post('/users/{id}/zero-balance', [AdminController::class, 'zeroUserBalance'])->name('users.zeroBalance');
     Route::post('/users/{id}/delete', [AdminController::class, 'deleteUser'])->name('users.delete');
