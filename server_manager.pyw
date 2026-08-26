@@ -214,7 +214,7 @@ class ServerControllerApp:
         tg_btn = tk.Button(
             card,
             text="📱 Open Telegram Admin Bot (@MypayteAdmin_Bot)",
-            font=("Segoe UI", 8.5, "bold"),
+            font=("Segoe UI", 9, "bold"),
             bg="#0284c7",
             fg="white",
             activebackground="#0369a1",
@@ -230,7 +230,7 @@ class ServerControllerApp:
         git_btn = tk.Button(
             card,
             text="🔄 Sync & Push to GitHub Now",
-            font=("Segoe UI", 8.5, "bold"),
+            font=("Segoe UI", 9, "bold"),
             bg="#16a34a",
             fg="white",
             activebackground="#15803d",
