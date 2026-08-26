@@ -45,6 +45,15 @@ class EnforceUserSessionTimeout
                 return response()->view('auth.suspended', [], 403);
             }
 
+            // Sync live database stats into session so all views and controllers are 100% up-to-date
+            if ($user) {
+                session()->put('user_id', $user->id);
+                session()->put('user_username', $user->username);
+                session()->put('user_balance', (float)$user->balance);
+                session()->put('total_recharge', (float)$user->total_recharge);
+                session()->put('commission_balance', (float)$user->commission_balance);
+            }
+
             // 3. 1-Hour Session Timeout Check (3600 seconds) for client users
             $loginTime = session('user_login_timestamp');
             $maxLifetime = 3600; // 1 Hour

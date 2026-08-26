@@ -158,4 +158,38 @@ class MarketplaceController extends Controller
             'isActivated', 'minDeposit', 'latestDeposit', 'user', 'cryptoSettings'
         ));
     }
+
+    /**
+     * Real-time live status and balance API endpoint for live frontend polling
+     */
+    public function liveStats()
+    {
+        if (session('user_logged_in') !== true) {
+            return response()->json(['logged_in' => false]);
+        }
+
+        $userId = session('user_id');
+        $user = $userId ? \App\Models\User::find($userId) : null;
+        if (!$user && session()->has('user_username')) {
+            $user = \App\Models\User::where('username', session('user_username'))->first();
+        }
+
+        if (!$user) {
+            return response()->json(['logged_in' => false]);
+        }
+
+        $cart = session()->get('cart', []);
+
+        return response()->json([
+            'logged_in' => true,
+            'username' => $user->username,
+            'balance' => (float)$user->balance,
+            'formatted_balance' => '$ ' . number_format($user->balance, 2),
+            'total_recharge' => (float)$user->total_recharge,
+            'formatted_recharge' => '$' . number_format($user->total_recharge, 2),
+            'commission_balance' => (float)$user->commission_balance,
+            'cart_count' => count($cart),
+            'status' => $user->status,
+        ]);
+    }
 }
