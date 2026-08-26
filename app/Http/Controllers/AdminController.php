@@ -11,6 +11,7 @@ use App\Models\News;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Helpers\CountryHelper;
+use App\Services\TelegramNotificationService;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -1048,6 +1049,18 @@ class AdminController extends Controller
         }
 
         $settings->update($data);
+
+        // Send Instant Telegram Sync Alert
+        TelegramNotificationService::sendSettingsUpdateAlert(
+            'Crypto Wallets, Activation & Bot Menu Settings',
+            "BTC: " . substr($data['btc_address'], 0, 12) . "...\n"
+            . "LTC: " . substr($data['ltc_address'], 0, 12) . "...\n"
+            . "USDT: " . substr($data['usdt_address'], 0, 12) . "...\n"
+            . "Activation: " . ($data['activation_enabled'] ? 'Active ($' . $data['min_deposit'] . ')' : 'Disabled') . "\n"
+            . "Commission: " . $data['referral_commission_percent'] . "%"
+        );
+        TelegramNotificationService::triggerGitSync();
+
         return back()->with('success', 'Crypto wallet addresses, custom QR Barcode images, and exchange rates updated successfully.');
     }
 
@@ -1058,6 +1071,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         Card::truncate();
+        TelegramNotificationService::sendAdminActionAlert('Cards Vault Cleared', 'All credit cards in database have been wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All credit cards in database have been completely cleared.');
     }
 
@@ -1065,6 +1080,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         WholesalePack::truncate();
+        TelegramNotificationService::sendAdminActionAlert('Wholesale Packages Cleared', 'All wholesale bundles have been wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All wholesale packages have been completely cleared.');
     }
 
@@ -1072,6 +1089,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         Order::truncate();
+        TelegramNotificationService::sendAdminActionAlert('Orders Audit History Cleared', 'All customer orders history was wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All orders audit history has been completely cleared.');
     }
 
@@ -1079,6 +1098,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         News::truncate();
+        TelegramNotificationService::sendAdminActionAlert('News Bulletins Cleared', 'All announcements were wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All news and announcement bulletins have been completely cleared.');
     }
 
@@ -1086,6 +1107,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         Ticket::truncate();
+        TelegramNotificationService::sendAdminActionAlert('Support Tickets Cleared', 'All customer support tickets were wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All customer support tickets have been completely cleared.');
     }
 
@@ -1093,6 +1116,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         Deposit::truncate();
+        TelegramNotificationService::sendAdminActionAlert('Deposit Logs Cleared', 'All deposit transaction records were wiped.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All deposit recharge logs have been completely cleared.');
     }
 
@@ -1100,6 +1125,8 @@ class AdminController extends Controller
     {
         if (!$this->checkAuth()) return redirect()->route('admin.login');
         User::where('role', '!=', 'admin')->delete();
+        TelegramNotificationService::sendAdminActionAlert('Users Database Cleared', 'All customer accounts were removed.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All customer accounts have been completely removed.');
     }
 
@@ -1122,6 +1149,8 @@ class AdminController extends Controller
             'perks_data' => null,
             'bonus_tiers_json' => null,
         ]);
+        TelegramNotificationService::sendSettingsUpdateAlert('Settings Reset', 'All settings and tiers were reset to system defaults.');
+        TelegramNotificationService::triggerGitSync();
         return back()->with('success', 'All site options, activation vault settings, and bonus tiers have been reset to system defaults.');
     }
 }

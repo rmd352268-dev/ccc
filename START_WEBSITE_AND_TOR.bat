@@ -1,12 +1,12 @@
 @echo off
-title Laravel Tor Onion Service Host
+title Laravel Tor Onion Service & Bot Host
 cls
 echo ===================================================
-echo     STARTING LARAVEL AND TOR ONION SERVICE
+echo     STARTING LARAVEL, TOR, BOT & AUTO GIT SYNC
 echo ===================================================
 echo.
 
-echo [1/3] Checking Tor Daemon...
+echo [1/4] Checking Tor Daemon...
 tasklist /FI "IMAGENAME eq tor.exe" 2>NUL | find /I /N "tor.exe">NUL
 if "%ERRORLEVEL%"=="0" (
     echo Tor Daemon is already running.
@@ -15,7 +15,7 @@ if "%ERRORLEVEL%"=="0" (
     start /B "" "C:\Users\hp\tor_service\tor\tor.exe" -f "C:\Users\hp\tor_service\torrc"
 )
 
-echo [2/3] Checking Laravel Web Server...
+echo [2/4] Checking Laravel Web Server...
 tasklist /FI "IMAGENAME eq php.exe" 2>NUL | find /I /N "php.exe">NUL
 if "%ERRORLEVEL%"=="0" (
     echo PHP Laravel Server is already running.
@@ -25,9 +25,13 @@ if "%ERRORLEVEL%"=="0" (
     start /B "" php artisan serve --host=127.0.0.1 --port=8000
 )
 
-echo [3/3] Checking Telegram Admin Bot...
+echo [3/4] Checking Telegram Admin Bot...
 start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\telegram_admin_bot.pyw"
-echo Telegram Admin Bot is running.
+echo Telegram Admin Bot is active.
+
+echo [4/4] Starting Auto Git Sync Engine...
+start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\auto_git_sync.py"
+echo GitHub Auto-Sync Engine is active.
 
 echo.
 echo ===================================================
@@ -37,9 +41,8 @@ echo ===================================================
 echo.
 echo Local Link: http://127.0.0.1:8000
 echo Telegram Bot: @MypayteAdmin_Bot
+echo GitHub Sync: Auto-Sync Active (rmd352268-dev/ccc)
 echo.
-echo Do not close this window if you want to monitor.
-echo The site will run as long as your PC is on.
+echo All services running in background.
 echo ===================================================
 pause
-

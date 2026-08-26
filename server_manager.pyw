@@ -33,7 +33,7 @@ class ServerControllerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("⚡ Website & Bot Live Switcher")
-        self.root.geometry("400x560")
+        self.root.geometry("400x630")
         self.root.resizable(False, False)
         self.root.configure(bg="#0f172a")  # Dark Slate
 
@@ -53,6 +53,13 @@ class ServerControllerApp:
         self.monitor_active = True
         self.monitor_thread = threading.Thread(target=self.monitor_services_loop, daemon=True)
         self.monitor_thread.start()
+
+        # Start Auto Git Sync Engine background watcher
+        try:
+            from auto_git_sync import start_background_git_sync_thread
+            start_background_git_sync_thread()
+        except Exception:
+            pass
 
         # Handle window close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -156,6 +163,15 @@ class ServerControllerApp:
         self.bot_val = tk.Label(f3, text="Checking...", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg="#0f172a")
         self.bot_val.pack(side="right")
 
+        # Row 4: Auto Git Sync Engine
+        f4 = tk.Frame(status_box, bg="#0f172a")
+        f4.pack(fill="x", pady=2)
+        self.git_indicator = tk.Label(f4, text="●", font=("Segoe UI", 10, "bold"), fg="#22c55e", bg="#0f172a")
+        self.git_indicator.pack(side="left")
+        tk.Label(f4, text=" 🚀 Auto Git Sync (GitHub)", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
+        self.git_val = tk.Label(f4, text="Active & Live", font=("Segoe UI", 9, "bold"), fg="#4ade80", bg="#0f172a")
+        self.git_val.pack(side="right")
+
         # Action Buttons
         btn_frame = tk.Frame(card, bg="#1e293b")
         btn_frame.pack(fill="x", pady=4)
@@ -204,7 +220,23 @@ class ServerControllerApp:
             pady=5,
             command=lambda: webbrowser.open("https://t.me/MypayteAdmin_Bot")
         )
-        tg_btn.pack(fill="x", pady=4)
+        tg_btn.pack(fill="x", pady=2)
+
+        # Git Push Button
+        git_btn = tk.Button(
+            card,
+            text="🔄 Sync & Push to GitHub Now",
+            font=("Segoe UI", 8, "bold"),
+            bg="#16a34a",
+            fg="white",
+            activebackground="#15803d",
+            relief="flat",
+            cursor="hand2",
+            padx=8,
+            pady=5,
+            command=self.push_to_git_now
+        )
+        git_btn.pack(fill="x", pady=2)
 
         # Copied alert label (fadeable)
         self.alert_lbl = tk.Label(card, text="", font=("Segoe UI", 8), fg="#4ade80", bg="#1e293b")
@@ -254,6 +286,7 @@ class ServerControllerApp:
 WshShell.Run "cmd /c tasklist /FI ""IMAGENAME eq tor.exe"" | find /I ""tor.exe"" || {TOR_EXE} -f {TOR_RC}", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || php artisan serve --host=127.0.0.1 --port=8000", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe telegram_admin_bot.pyw", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, False
 '''
             try:
                 os.makedirs(os.path.dirname(STARTUP_FILE), exist_ok=True)
@@ -417,6 +450,19 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe telegram_admin_bot.pyw",
     def open_localhost(self):
         webbrowser.open(LOCAL_URL)
         self.show_alert("Opening http://127.0.0.1:8000...", "#38bdf8")
+
+    def push_to_git_now(self):
+        def _run():
+            self.root.after(0, lambda: self.show_alert("⏳ Checking & pushing to GitHub...", "#38bdf8"))
+            try:
+                from auto_git_sync import sync_and_push_now
+                ok, msg = sync_and_push_now(notify_telegram=True)
+                color = "#4ade80" if ok else "#f87171"
+                self.root.after(0, lambda: self.show_alert(f"✔ {msg}" if ok else f"❌ {msg}", color))
+            except Exception as e:
+                self.root.after(0, lambda: self.show_alert(f"❌ Error: {e}", "#f87171"))
+
+        threading.Thread(target=_run, daemon=True).start()
 
     def show_alert(self, msg, color="#4ade80"):
         self.alert_lbl.config(text=msg, fg=color)

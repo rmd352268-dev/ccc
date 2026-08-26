@@ -13,6 +13,12 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import bcrypt
 
+# Auto Git Sync Engine Integration
+try:
+    from auto_git_sync import get_git_status_info, sync_and_push_now, start_background_git_sync_thread
+except Exception:
+    pass
+
 # Ensure output encoding is safe when running under pythonw
 try:
     if sys.stdout is None:
@@ -182,7 +188,8 @@ def get_persistent_reply_keyboard():
         [{"text": "💰 Pending Deposits"}, {"text": "👥 User Management"}],
         [{"text": "💳 Cards Vault & Import"}, {"text": "🎫 Support Tickets"}],
         [{"text": "📢 News Feed"}, {"text": "⚙️ Crypto Settings"}],
-        [{"text": "📦 Wholesale Packs"}, {"text": "📋 Orders & Sales"}]
+        [{"text": "📦 Wholesale Packs"}, {"text": "📋 Orders & Sales"}],
+        [{"text": "🔄 Git Sync & Push"}, {"text": "⚡ Server Power"}]
     ]
     try:
         conn = get_db()
@@ -1108,10 +1115,53 @@ def get_main_menu_keyboard():
                 {"text": "🔄 Restart Server", "callback_data": "cmd:restart_server"}
             ],
             [
-                {"text": "⚠️ Emergency Data Wipe", "callback_data": "cmd:emergency_prompt"}
+                {"text": "🔄 GitHub Auto-Sync & Backup", "callback_data": "cmd:git_hub"},
+                {"text": "⚠️ Emergency Wipe", "callback_data": "cmd:emergency_prompt"}
             ]
         ]
     }
+
+def build_git_hub_view():
+    try:
+        from auto_git_sync import get_git_status_info
+        has_ch, files, branch, last_c = get_git_status_info()
+    except Exception:
+        has_ch, files, branch, last_c = False, [], "main", "N/A"
+
+    st_icon = "🟡 PENDING CHANGES" if has_ch else "🟢 CLEAN & SYNCED"
+    
+    file_list_str = ""
+    if files:
+        file_list_str = "\n<b>Uncommitted / Modified Files:</b>\n" + "\n".join([f"• <code>{f}</code>" for f in files[:8]])
+        if len(files) > 8:
+            file_list_str += f"\n<i>...and {len(files)-8} more files</i>"
+    else:
+        file_list_str = "\n<i>✔ All local files, code, and database are in sync with GitHub!</i>"
+
+    text = (
+        "🚀 <b>[GITHUB AUTO-SYNC & CLOUD BACKUP]</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"📊 <b>Repo Status:</b> {st_icon}\n"
+        f"📦 <b>Active Branch:</b> <code>{branch}</code>\n"
+        f"📝 <b>Last Commit:</b> <code>{last_c}</code>\n"
+        f"📂 <b>Pending Files:</b> <code>{len(files)} file(s)</code>\n"
+        f"{file_list_str}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "⚡ <i>Files are automatically monitored and pushed. You can also trigger an instant push right now:</i>"
+    )
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "⚡ Commit & Push to GitHub Now", "callback_data": "action:git_push_now"},
+                {"text": "🔄 Refresh", "callback_data": "cmd:git_hub"}
+            ],
+            [
+                {"text": "🔙 Main Menu", "callback_data": "cmd:main_menu"}
+            ]
+        ]
+    }
+    return text, keyboard
 
 def get_main_menu_text():
     return (
@@ -2020,6 +2070,23 @@ def process_message(msg):
         t, k = build_pending_deposits_view()
         send_admin_msg(t, k)
 
+    elif text in ["/git_sync", "/git_status", "/git_push", "/git", "🔄 Git Sync & Push", "🔄 Git Sync", "⚡ Git Sync", "Git Sync"]:
+        t, k = build_git_hub_view()
+        send_admin_msg(t, k)
+
+    elif text in ["⚡ Server Power", "Server Power"]:
+        send_admin_msg(
+            "⚡ <b>[SERVER POWER & DAEMON CONTROLS]</b>\n\n"
+            "Select action below:",
+            {
+                "inline_keyboard": [
+                    [{"text": "🚀 Start Server", "callback_data": "cmd:start_server"}, {"text": "🛑 Stop Server", "callback_data": "cmd:stop_server"}],
+                    [{"text": "🔄 Restart Server", "callback_data": "cmd:restart_server"}, {"text": "📊 Status", "callback_data": "cmd:status"}],
+                    [{"text": "🔙 Main Menu", "callback_data": "cmd:main_menu"}]
+                ]
+            }
+        )
+
     elif text == "/domain" or text == "/onion":
         t, k = build_domain_view()
         send_admin_msg(t, k)
@@ -2179,6 +2246,20 @@ def process_callback_query(cq):
 
     elif data == "cmd:pending_deposits":
         t, k = build_pending_deposits_view()
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data == "cmd:git_hub":
+        t, k = build_git_hub_view()
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data == "action:git_push_now":
+        try:
+            from auto_git_sync import sync_and_push_now
+            ok, res = sync_and_push_now(notify_telegram=False)
+            answer_callback(cq_id, res, show_alert=True)
+        except Exception as e:
+            answer_callback(cq_id, f"Error: {e}", show_alert=True)
+        t, k = build_git_hub_view()
         edit_admin_msg(chat_id, message_id, t, k)
 
     elif data == "cmd:domain":
@@ -2511,6 +2592,12 @@ def main():
     # Start real-time deposit push monitor in background
     dep_monitor_th = threading.Thread(target=deposit_alert_monitor_loop, daemon=True)
     dep_monitor_th.start()
+
+    # Start Auto Git Sync Engine background watcher
+    try:
+        start_background_git_sync_thread()
+    except Exception as e:
+        print(f"[!] Git Sync thread start error: {e}")
 
     # Flush old pending updates before polling
     try:

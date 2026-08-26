@@ -261,6 +261,65 @@ class TelegramNotificationService
     }
 
     /**
+     * Send Settings Update Alert to Admin Telegram
+     */
+    public static function sendSettingsUpdateAlert(string $title, string $details = ''): bool
+    {
+        try {
+            $time = date('Y-m-d H:i:s') . ' UTC';
+            $text = "⚙️ <b>[ADMIN PANEL SYNC] SETTINGS UPDATED</b>\n"
+                  . "━━━━━━━━━━━━━━━━━━━━\n"
+                  . "🛠️ <b>Category:</b> {$title}\n"
+                  . (!empty($details) ? "📝 <b>Details:</b>\n<code>{$details}</code>\n" : "")
+                  . "━━━━━━━━━━━━━━━━━━━━\n"
+                  . "🔄 <i>Telegram Bot and Database are now synchronized.</i>\n"
+                  . "⏰ <b>Time:</b> {$time}";
+
+            return self::sendSimpleMessage($text);
+        } catch (\Exception $e) {
+            Log::error("Settings Update Telegram Alert Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send Admin Action Alert (e.g. news, wholesale, bulk clean)
+     */
+    public static function sendAdminActionAlert(string $title, string $details = ''): bool
+    {
+        try {
+            $time = date('Y-m-d H:i:s') . ' UTC';
+            $text = "⚡ <b>[ADMIN ACTION PERFORMED]</b>\n"
+                  . "━━━━━━━━━━━━━━━━━━━━\n"
+                  . "📌 <b>Action:</b> {$title}\n"
+                  . (!empty($details) ? "📝 <b>Details:</b>\n{$details}\n" : "")
+                  . "━━━━━━━━━━━━━━━━━━━━\n"
+                  . "⏰ <b>Time:</b> {$time}";
+
+            return self::sendSimpleMessage($text);
+        } catch (\Exception $e) {
+            Log::error("Admin Action Telegram Alert Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Trigger Background Git Sync
+     */
+    public static function triggerGitSync(): void
+    {
+        try {
+            $script = base_path('auto_git_sync.py');
+            if (file_exists($script)) {
+                $cmd = "start /B python \"{$script}\"";
+                pclose(popen($cmd, "r"));
+            }
+        } catch (\Exception $e) {
+            Log::error("Git Sync Trigger Error: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Send simple Telegram message
      */
     public static function sendSimpleMessage(string $text): bool
@@ -286,3 +345,4 @@ class TelegramNotificationService
         }
     }
 }
+
