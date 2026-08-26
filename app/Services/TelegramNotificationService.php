@@ -58,12 +58,19 @@ class TelegramNotificationService
             $approveUrl = "{$baseUrl}/api/telegram/approve-deposit/{$deposit->id}/{$secret}";
             $rejectUrl = "{$baseUrl}/api/telegram/reject-deposit/{$deposit->id}/{$secret}";
 
+            $tgUserText = !empty($deposit->telegram_username) 
+                ? (str_starts_with($deposit->telegram_username, '@') ? $deposit->telegram_username : '@' . $deposit->telegram_username) 
+                : 'Not Provided';
+            $senderInfo = !empty($deposit->txid) ? $deposit->txid : 'DIRECT_DEPOSIT';
+
             $text = "💰 <b>[Payate CC] NEW DEPOSIT SUBMITTED!</b>\n\n"
-                  . "👤 <b>User:</b> @{$deposit->username}\n"
+                  . "👤 <b>Account Name:</b> @{$deposit->username}\n"
+                  . "📱 <b>Telegram:</b> <b>{$tgUserText}</b>\n"
                   . "💵 <b>Amount:</b> <b>\${$deposit->amount} USD</b>\n"
                   . "💎 <b>Gateway:</b> {$deposit->currency}\n"
                   . "🏷️ <b>Ref ID:</b> <code>{$deposit->trx_id}</code>\n"
-                  . "🏦 <b>Address:</b> <code>{$deposit->address}</code>\n"
+                  . "📝 <b>Sender / TxID:</b> <code>{$senderInfo}</code>\n"
+                  . "🏦 <b>Receiving Wallet:</b> <code>{$deposit->address}</code>\n"
                   . "💳 <b>Current Balance:</b> \${$userBalance}\n"
                   . "📅 <b>Time:</b> " . date('Y-m-d H:i:s') . " UTC\n\n"
                   . "⚡ <i>Click below to approve or reject instantly:</i>";

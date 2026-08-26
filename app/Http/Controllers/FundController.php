@@ -24,15 +24,24 @@ class FundController extends Controller
 
     public function submitRecharge(Request $request)
     {
-        $username = session('user_username');
-        if (!$username) {
+        $sessionUser = session('user_username');
+        if (!$sessionUser) {
             return redirect()->route('login')->with('error', 'Please log in to submit a recharge request.');
         }
 
         $request->validate([
             'currency' => 'required|string',
             'amount' => 'required|numeric|min:1',
+            'account_name' => 'nullable|string|max:100',
+            'telegram_username' => 'nullable|string|max:100',
+            'txid' => 'nullable|string|max:255',
         ]);
+
+        $username = !empty($request->account_name) ? trim($request->account_name) : $sessionUser;
+        $telegramUsername = !empty($request->telegram_username) ? trim($request->telegram_username) : null;
+        if ($telegramUsername && !str_starts_with($telegramUsername, '@') && !str_starts_with($telegramUsername, '+')) {
+            $telegramUsername = '@' . $telegramUsername;
+        }
 
         $settings = CryptoSetting::getSettings();
         $currency = $request->currency;
@@ -43,12 +52,15 @@ class FundController extends Controller
             $address = $settings->ltc_address;
         }
 
+        $txidInfo = !empty($request->txid) ? trim($request->txid) : 'DIRECT_DEPOSIT';
+
         $deposit = Deposit::create([
             'username' => $username,
+            'telegram_username' => $telegramUsername,
             'trx_id' => 'DEP-' . strtoupper(bin2hex(random_bytes(5))),
             'currency' => $currency,
             'amount' => (float)$request->amount,
-            'txid' => !empty($request->txid) ? trim($request->txid) : 'DIRECT_DEPOSIT',
+            'txid' => $txidInfo,
             'address' => $address,
             'status' => 'pending',
         ]);
@@ -56,7 +68,7 @@ class FundController extends Controller
         // Send Instant Telegram Bot Alert to Admin with 1-Click Approve Button
         TelegramNotificationService::sendDepositAlert($deposit);
 
-        return back()->with('success', "Recharge request for \${$request->amount} ({$currency}) submitted successfully! Your deposit is pending Admin approval and will be credited to your balance.");
+        return back()->with('success', "Recharge request for \${$request->amount} ({$currency}) submitted successfully! Your deposit is pending Admin approval and will be credited to your account (@{$username}).");
     }
 
     public function telegramApproveDeposit($id, $secret)
