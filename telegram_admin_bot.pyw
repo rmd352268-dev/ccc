@@ -603,7 +603,7 @@ def update_user_balance_action(username, amount, mode="add"):
     if mode == "add":
         new_bal = old_bal + float(amount)
         new_tot = float(user["total_recharge"] or 0.0) + float(amount)
-        c.execute("UPDATE users SET balance = ?, total_recharge = ?, updated_at = ? WHERE id = ?", (new_bal, new_tot, now_str, user["id"]))
+        c.execute("UPDATE users SET balance = ?, total_recharge = ?, is_activated = 1, updated_at = ? WHERE id = ?", (new_bal, new_tot, now_str, user["id"]))
         trx = "DEP-MANUAL-" + os.urandom(4).hex().upper()
         c.execute("""
             INSERT INTO deposits (username, trx_id, currency, amount, address, status, txid, admin_notes, created_at, updated_at)
@@ -623,7 +623,7 @@ def update_user_balance_action(username, amount, mode="add"):
     elif mode == "set":
         new_bal = float(amount)
         diff = new_bal - old_bal
-        c.execute("UPDATE users SET balance = ?, updated_at = ? WHERE id = ?", (new_bal, now_str, user["id"]))
+        c.execute("UPDATE users SET balance = ?, is_activated = CASE WHEN ? > 0 THEN 1 ELSE is_activated END, updated_at = ? WHERE id = ?", (new_bal, new_bal, now_str, user["id"]))
         if diff != 0:
             trx = "ADJ-" + os.urandom(4).hex().upper()
             c.execute("""
