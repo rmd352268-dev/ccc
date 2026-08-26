@@ -87,8 +87,14 @@
                 </tr>
             </thead>
             <tbody>
+                @php
+                    $cartSession = session('cart', []);
+                @endphp
                 @forelse($cards as $card)
-                    <tr>
+                    @php
+                        $inCart = isset($cartSession[$card->id]);
+                    @endphp
+                    <tr id="super-card-row-{{ $card->id }}" class="{{ $inCart ? 'row-in-cart' : '' }}">
                         <td class="text-center">
                             <input type="checkbox" class="card-row-checkbox" value="{{ $card->id }}" onchange="updateSelectedCount()">
                         </td>
@@ -129,8 +135,16 @@
                             </div>
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn-buy-cart" onclick="addToCart({{ $card->id }})">
-                                <i class="fa-solid fa-cart-shopping"></i> Add
+                            <button type="button" 
+                                    class="btn-buy-cart {{ $inCart ? 'in-cart' : '' }}" 
+                                    data-card-id="{{ $card->id }}" 
+                                    onclick="addToCart({{ $card->id }}, this)" 
+                                    title="{{ $inCart ? 'In Shopping Cart' : 'Add to Shopping Cart' }}">
+                                @if($inCart)
+                                    <i class="fa-solid fa-check"></i> <span data-i18n="btn_in_cart">В корзине</span>
+                                @else
+                                    <i class="fa-solid fa-cart-shopping"></i> <span data-i18n="btn_add">В корзину</span>
+                                @endif
                             </button>
                         </td>
                     </tr>

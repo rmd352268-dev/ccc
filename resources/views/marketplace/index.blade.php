@@ -808,10 +808,16 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $cartSession = session('cart', []);
+                    @endphp
                     @forelse($cards as $card)
-                        <tr>
+                        @php
+                            $inCart = isset($cartSession[$card->id]);
+                        @endphp
+                        <tr id="card-row-{{ $card->id }}" class="{{ $inCart ? 'row-in-cart' : '' }}">
                             <td class="text-center">
-                                <input type="checkbox" class="table-checkbox card-select-cb" value="{{ $card->id }}" onchange="updateSelectedCount()">
+                                <input type="checkbox" class="table-checkbox card-select-cb card-row-checkbox" value="{{ $card->id }}" onchange="updateSelectedCount()">
                             </td>
                             <td>
                                 <span class="brand-badge brand-{{ strtolower($card->brand) }}">
@@ -866,8 +872,16 @@
                                 </div>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn-buy-cart" onclick="addToCart({{ $card->id }})" title="Add to Shopping Cart">
-                                    <i class="fa-solid fa-cart-shopping"></i> <span data-i18n="btn_add">В корзину</span>
+                                <button type="button" 
+                                        class="btn-buy-cart {{ $inCart ? 'in-cart' : '' }}" 
+                                        data-card-id="{{ $card->id }}" 
+                                        onclick="addToCart({{ $card->id }}, this)" 
+                                        title="{{ $inCart ? 'In Shopping Cart' : 'Add to Shopping Cart' }}">
+                                    @if($inCart)
+                                        <i class="fa-solid fa-check"></i> <span data-i18n="btn_in_cart">В корзине</span>
+                                    @else
+                                        <i class="fa-solid fa-cart-shopping"></i> <span data-i18n="btn_add">В корзину</span>
+                                    @endif
                                 </button>
                             </td>
                         </tr>
