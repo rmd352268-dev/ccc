@@ -68,15 +68,27 @@
                             </div>
                         </td>
                         <td>
-                            @if($user->status === 'active')
-                                <span style="background: rgba(5,150,105,0.15); color: #059669; border: 1px solid rgba(5,150,105,0.3); font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
-                                    <i class="fa-solid fa-circle-check"></i> ACTIVE
-                                </span>
-                            @else
-                                <span style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.3); font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
-                                    <i class="fa-solid fa-ban"></i> BANNED
-                                </span>
-                            @endif
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                @if($user->status === 'active')
+                                    <span style="background: rgba(5,150,105,0.15); color: #059669; border: 1px solid rgba(5,150,105,0.3); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; width: fit-content;">
+                                        <i class="fa-solid fa-circle-check"></i> ACTIVE
+                                    </span>
+                                @else
+                                    <span style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.3); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; width: fit-content;">
+                                        <i class="fa-solid fa-ban"></i> BANNED
+                                    </span>
+                                @endif
+
+                                @if($user->is_activated)
+                                    <span style="background: rgba(16,185,129,0.12); color: #10B981; border: 1px solid rgba(16,185,129,0.35); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; width: fit-content;" title="Account is permanently activated (Vault Unlocked)">
+                                        <i class="fa-solid fa-lock-open"></i> ACTIVATED
+                                    </span>
+                                @else
+                                    <span style="background: rgba(245,158,11,0.12); color: #F59E0B; border: 1px solid rgba(245,158,11,0.35); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; width: fit-content;" title="Deposit required to unlock vault">
+                                        <i class="fa-solid fa-lock"></i> LOCKED
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="text-center">
                             <div style="display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center;">
@@ -90,22 +102,30 @@
                                         <i class="fa-solid fa-crown"></i> Admin Master
                                     </span>
                                 @else
+                                    <!-- Toggle Vault Activation (1-Click) -->
+                                    <form action="{{ route('admin.users.toggleActivate', $user->id) }}" method="POST" onsubmit="return confirm('{{ $user->is_activated ? 'Deactivate and lock vault for' : 'Permanently activate vault for' }} @{{ $user->username }}?')">
+                                        @csrf
+                                        <button type="submit" class="btn-reset" style="padding: 5px 8px; font-size: 11px; color: {{ $user->is_activated ? '#10B981' : '#F59E0B' }}; border-color: {{ $user->is_activated ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)' }};" title="{{ $user->is_activated ? 'Deactivate Vault' : 'Activate Vault Permanently' }}">
+                                            <i class="fa-solid {{ $user->is_activated ? 'fa-lock-open' : 'fa-bolt' }}"></i> {{ $user->is_activated ? 'Active' : 'Unlock' }}
+                                        </button>
+                                    </form>
+
                                     <!-- Ban / Unban Toggle Button -->
                                     <form action="{{ route('admin.users.toggleSuspend', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to {{ $user->status === 'active' ? 'BAN' : 'UNBAN' }} user @{{ $user->username }}?')">
                                         @csrf
                                         @if($user->status === 'active')
                                             <button type="submit" class="btn-reset" style="padding: 5px 9px; font-size: 11px; color: #EF4444; border-color: rgba(239,68,68,0.4);" title="Ban user from accessing website">
-                                                <i class="fa-solid fa-ban"></i> Ban User
+                                                <i class="fa-solid fa-ban"></i> Ban
                                             </button>
                                         @else
                                             <button type="submit" class="btn-reset" style="padding: 5px 9px; font-size: 11px; color: #10B981; border-color: rgba(16,185,129,0.4);" title="Unban user access">
-                                                <i class="fa-solid fa-lock-open"></i> Unban
+                                                <i class="fa-solid fa-user-check"></i> Unban
                                             </button>
                                         @endif
                                     </form>
 
                                     <!-- Zero Balance Button (1-Click) -->
-                                    <form action="{{ route('admin.users.zeroBalance', $user->id) }}" method="POST" onsubmit="return confirm('Zero out balance for @{{ $user->username }}?')">
+                                    <form action="{{ route('admin.users.zeroBalance', $user->id) }}" method="POST" onsubmit="return confirm('Zero out balance for @{{ $user->username }}? Note: User will remain active and able to browse cards.')">
                                         @csrf
                                         <button type="submit" class="btn-reset" style="padding: 5px 8px; font-size: 11px; color: #F59E0B; border-color: rgba(245,158,11,0.4);" title="Set Balance to $0.00">
                                             <i class="fa-solid fa-circle-xmark"></i> Zero $0
