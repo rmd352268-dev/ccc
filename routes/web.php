@@ -42,6 +42,7 @@ Route::post('/wholesale/{id}/buy', [WholesaleController::class, 'buyPack'])->nam
 
 // Cart
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/toggle/{id}', [CartController::class, 'toggle'])->name('cart.toggle');
 Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/bulk-add', [CartController::class, 'bulkAdd'])->name('cart.bulkAdd');
 Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');

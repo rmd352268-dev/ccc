@@ -20,6 +20,41 @@ class CartController extends Controller
         return view('cart.index', compact('cards', 'total'));
     }
 
+    public function toggle(Request $request, $id)
+    {
+        $card = Card::findOrFail($id);
+        if ($card->status !== 'available') {
+            return response()->json(['success' => false, 'message' => 'Card is no longer available!']);
+        }
+
+        $cart = session()->get('cart', []);
+        if (isset($cart[$id])) {
+            unset($cart[$id]);
+            session()->put('cart', $cart);
+            $inCart = false;
+            $msg = "BIN {$card->bin} removed from cart.";
+        } else {
+            $cart[$id] = [
+                'id' => $card->id,
+                'bin' => $card->bin,
+                'brand' => $card->brand,
+                'price' => $card->price_c,
+                'country' => $card->country_code,
+            ];
+            session()->put('cart', $cart);
+            $inCart = true;
+            $msg = "BIN {$card->bin} added to cart!";
+        }
+
+        return response()->json([
+            'success' => true,
+            'in_cart' => $inCart,
+            'card_id' => (int)$card->id,
+            'cart_count' => count($cart),
+            'message' => $msg,
+        ]);
+    }
+
     public function add(Request $request, $id)
     {
         $card = Card::findOrFail($id);
@@ -43,6 +78,8 @@ class CartController extends Controller
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
+                'in_cart' => true,
+                'card_id' => (int)$card->id,
                 'cart_count' => count($cart),
                 'message' => "BIN {$card->bin} added to cart!",
             ]);
@@ -60,6 +97,7 @@ class CartController extends Controller
 
         $cards = Card::whereIn('id', $ids)->where('status', 'available')->get();
         $cart = session()->get('cart', []);
+        $addedIds = [];
         foreach ($cards as $card) {
             $cart[$card->id] = [
                 'id' => $card->id,
@@ -68,11 +106,13 @@ class CartController extends Controller
                 'price' => $card->price_c,
                 'country' => $card->country_code,
             ];
+            $addedIds[] = (int)$card->id;
         }
         session()->put('cart', $cart);
 
         return response()->json([
             'success' => true,
+            'added_ids' => $addedIds,
             'cart_count' => count($cart),
             'message' => count($cards) . " cards added to cart!",
         ]);
@@ -89,6 +129,8 @@ class CartController extends Controller
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
+                'in_cart' => false,
+                'card_id' => (int)$id,
                 'cart_count' => count($cart),
                 'message' => 'Card removed from cart.',
             ]);
