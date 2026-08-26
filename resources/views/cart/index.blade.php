@@ -81,7 +81,9 @@
             </h3>
 
             @php
-                $userBalance = session()->get('user_balance', 10.00);
+                $userId = session('user_id');
+                $activeUser = $userId ? \App\Models\User::find($userId) : \App\Models\User::where('username', session('user_username'))->first();
+                $userBalance = $activeUser ? (float)$activeUser->balance : (float)session()->get('user_balance', 0.00);
                 $hasEnough = $userBalance >= $total;
             @endphp
 

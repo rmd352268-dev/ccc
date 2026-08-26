@@ -61,6 +61,9 @@ Route::get('/recharge', [FundController::class, 'index'])->name('funds.recharge'
 Route::post('/funds/submit-recharge', [FundController::class, 'submitRecharge'])->name('funds.submitRecharge');
 Route::post('/funds/mock-add', [FundController::class, 'mockAdd'])->name('funds.mockAdd');
 
+// Live Real-Time User Balance & Stats Endpoint
+Route::get('/api/user/live-stats', [MarketplaceController::class, 'liveStats'])->name('api.user.liveStats');
+
 // Telegram 1-Click Instant Action Endpoints
 Route::get('/api/telegram/approve-deposit/{id}/{secret}', [FundController::class, 'telegramApproveDeposit'])->name('api.telegram.approve');
 Route::get('/api/telegram/reject-deposit/{id}/{secret}', [FundController::class, 'telegramRejectDeposit'])->name('api.telegram.reject');
