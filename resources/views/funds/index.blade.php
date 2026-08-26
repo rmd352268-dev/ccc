@@ -420,7 +420,13 @@
                             {{ $rec->address ?? 'N/A' }}
                         </td>
                         <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-primary);">
-                            @ {{ $rec->username }} <span style="color: var(--text-muted);">({{ substr($rec->txid ?? 'DIRECT', 0, 12) }}...)</span>
+                            <div><strong>@ {{ $rec->username }}</strong></div>
+                            @if(!empty($rec->telegram_username))
+                                <div style="color: #38BDF8; font-size: 10px; margin-top: 1px;"><i class="fa-brands fa-telegram"></i> {{ $rec->telegram_username }}</div>
+                            @endif
+                            @if(!empty($rec->txid) && $rec->txid !== 'DIRECT_DEPOSIT')
+                                <div style="color: var(--text-muted); font-size: 10px; margin-top: 1px;" title="{{ $rec->txid }}">{{ substr($rec->txid, 0, 14) }}...</div>
+                            @endif
                         </td>
                         <td style="font-size: 11px; color: var(--text-muted);">
                             {{ $rec->created_at->format('Y-m-d H:i') }}

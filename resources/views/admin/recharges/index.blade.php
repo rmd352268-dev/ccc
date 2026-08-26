@@ -44,8 +44,12 @@
             <tbody>
                 @forelse($deposits as $d)
                     <tr>
-                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #3B82F6;">{{ $d->trx_id }}</td>
-                        <td style="font-weight: 600; color: var(--text-primary);">{{ $d->username ?? 'asadulislam17p' }}</td>
+                        <td style="font-weight: 600; color: var(--text-primary);">
+                            <div>{{ $d->username ?? 'User' }}</div>
+                            @if(!empty($d->telegram_username))
+                                <div style="color: #0284C7; font-size: 11px; font-weight: 700; margin-top: 2px;"><i class="fa-brands fa-telegram"></i> {{ $d->telegram_username }}</div>
+                            @endif
+                        </td>
                         <td><span class="type-badge">{{ $d->currency }}</span></td>
                         <td style="font-weight: 800; color: #10B981; font-family: 'JetBrains Mono', monospace; font-size: 14px;">
                             ${{ number_format($d->amount, 2) }}
