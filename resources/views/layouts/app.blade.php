@@ -85,6 +85,9 @@
     @php
         $userId = session('user_id');
         $activeUser = $userId ? \App\Models\User::find($userId) : null;
+        if (!$activeUser && session()->has('user_username')) {
+            $activeUser = \App\Models\User::where('username', session('user_username'))->first();
+        }
         $activeUsername = $activeUser ? $activeUser->username : session()->get('user_username', 'Guest');
         $userBalance = $activeUser ? (float)$activeUser->balance : (float)session()->get('user_balance', 0.00);
         $totalRecharge = $activeUser ? (float)$activeUser->total_recharge : (float)session()->get('total_recharge', 0.00);
@@ -111,8 +114,8 @@
                     <i class="fa-solid fa-circle-user" style="color: var(--gold-primary);"></i> <span data-i18n="welcome">Добро пожаловать:</span> <a href="{{ route('profile.index') }}" title="Profile"><span>{{ $userProfile['username'] ?? $activeUsername }}</span></a>
                 </div>
                 <div class="balance-box">
-                    <span class="balance-val">$ {{ number_format($userBalance, 2) }}</span>
-                    <span class="recharge-val">(<span data-i18n="total_recharge">Всего пополнено:</span> ${{ number_format($totalRecharge, 2) }})</span>
+                    <span class="balance-val" id="header-user-balance">$ {{ number_format($userBalance, 2) }}</span>
+                    <span class="recharge-val">(<span data-i18n="total_recharge">Всего пополнено:</span> <span id="header-user-recharge">${{ number_format($totalRecharge, 2) }}</span>)</span>
                 </div>
                 <a href="{{ route('funds.index') }}" class="btn-add-funds">
                     <i class="fa-solid fa-plus-circle"></i> <span data-i18n="add_funds">Пополнить</span>
@@ -265,6 +268,41 @@
                 window.location.href = "{{ route('logout') }}";
             }
         }, 1000);
+
+        // 🔄 Real-Time Live Balance & Stats Sync Engine
+        @if(session('user_logged_in') === true)
+        function syncLiveUserStats() {
+            fetch("{{ route('api.user.liveStats') }}", {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.logged_in) {
+                    const balEl = document.getElementById('header-user-balance');
+                    const rechEl = document.getElementById('header-user-recharge');
+                    const cartBadge = document.getElementById('cart-badge');
+                    
+                    if (balEl && data.formatted_balance) {
+                        balEl.textContent = data.formatted_balance;
+                    }
+                    if (rechEl && data.formatted_recharge) {
+                        rechEl.textContent = data.formatted_recharge;
+                    }
+                    if (cartBadge && typeof data.cart_count !== 'undefined') {
+                        cartBadge.textContent = data.cart_count;
+                        cartBadge.style.display = data.cart_count > 0 ? '' : 'none';
+                    }
+
+                    // If user was banned/suspended while active, reload to enforce lock screen
+                    if (data.status === 'banned' || data.status === 'suspended') {
+                        window.location.reload();
+                    }
+                }
+            })
+            .catch(() => {});
+        }
+        setInterval(syncLiveUserStats, 4000);
+        @endif
     </script>
     @stack('scripts')
 </body>
