@@ -152,19 +152,28 @@ class AdminController extends Controller
         $availableCards = Card::where('status', 'available')->count();
         $soldCards = Card::where('status', 'sold')->count();
         $totalOrders = Order::count();
-        $totalRevenue = Order::sum('total_price');
+        $totalRevenue = (float)Order::sum('total_amount');
+        if ($totalRevenue <= 0) {
+            $totalRevenue = (float)Order::sum('total_price');
+        }
         
         $pendingRecharges = Deposit::where('status', 'pending')->count();
         $pendingDeposits = Deposit::where('status', 'pending')->latest()->take(10)->get();
         $totalUsers = User::count();
-        $userBalance = (float)session()->get('user_balance', 10.00);
-        $totalRecharge = (float)session()->get('total_recharge', 0.00);
+        $activeUsers = User::where('status', 'active')->count();
+        $userBalance = (float)User::where('role', '!=', 'admin')->sum('balance');
+        $totalRecharge = (float)Deposit::where('status', 'completed')->sum('amount');
+        if ($totalRecharge <= 0) {
+            $totalRecharge = (float)User::where('role', '!=', 'admin')->sum('total_recharge');
+        }
 
         $recentOrders = Order::latest()->take(10)->get();
         $recentDeposits = Deposit::latest()->take(10)->get();
 
         return view('admin.dashboard', compact(
-            'totalCards', 'availableCards', 'soldCards', 'totalOrders', 'totalRevenue', 'pendingDeposits', 'pendingRecharges', 'totalUsers', 'userBalance', 'totalRecharge', 'recentOrders', 'recentDeposits'
+            'totalCards', 'availableCards', 'soldCards', 'totalOrders', 'totalRevenue', 
+            'pendingDeposits', 'pendingRecharges', 'totalUsers', 'activeUsers', 
+            'userBalance', 'totalRecharge', 'recentOrders', 'recentDeposits'
         ));
     }
 
@@ -192,11 +201,12 @@ class AdminController extends Controller
             $deposit->admin_notes = 'Verified on blockchain by Admin';
             $deposit->save();
 
-            // Credit balance in database if user exists
+            // Credit balance in database if user exists & permanently activate account
             $user = User::where('username', $deposit->username)->first();
             if ($user) {
                 $user->balance += $deposit->amount;
                 $user->total_recharge += $deposit->amount;
+                $user->is_activated = 1; // Permanently activate account
                 $user->save();
 
                 // Calculate & Credit Referral Commission to Referrer (50% or dynamic rate)
