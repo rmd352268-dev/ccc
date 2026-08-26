@@ -72,9 +72,20 @@ class ProfileController extends Controller
             'timezone' => 'nullable|string|max:50',
         ]);
 
-        if ($request->filled('username')) {
-            $user->username = trim($request->username);
-            session()->put('user_username', $user->username);
+        $oldUsername = $user->username;
+        if ($request->filled('username') && trim($request->username) !== $oldUsername) {
+            $newUsername = trim($request->username);
+            $user->username = $newUsername;
+            session()->put('user_username', $newUsername);
+
+            // Cascade username updates to deposits, orders, tickets, commissions, and wholesale packs
+            \App\Models\Deposit::where('username', $oldUsername)->update(['username' => $newUsername]);
+            \App\Models\Order::where('username', $oldUsername)->update(['username' => $newUsername]);
+            \App\Models\Ticket::where('username', $oldUsername)->update(['username' => $newUsername]);
+            \App\Models\Commission::where('referrer_username', $oldUsername)->update(['referrer_username' => $newUsername]);
+            \App\Models\Commission::where('referred_username', $oldUsername)->update(['referred_username' => $newUsername]);
+            \App\Models\User::where('referred_by', $oldUsername)->update(['referred_by' => $newUsername]);
+            \App\Models\WholesalePack::where('buyer_username', $oldUsername)->update(['buyer_username' => $newUsername]);
         }
 
         if ($request->filled('full_name')) $user->name = trim($request->full_name);

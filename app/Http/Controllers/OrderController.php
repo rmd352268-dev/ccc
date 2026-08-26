@@ -150,7 +150,7 @@ class OrderController extends Controller
         $item = OrderItem::where('order_id', $order->id)->where('id', $itemId)->firstOrFail();
 
         // Add back balance to database user
-        $user = \App\Models\User::find($userId);
+        $user = $userId ? \App\Models\User::find($userId) : \App\Models\User::where('username', $username)->first();
         if ($user) {
             $user->balance += $item->price;
             $user->save();
