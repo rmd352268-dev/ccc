@@ -707,31 +707,36 @@ tr.row-in-cart {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 6px;
-    border-radius: 4px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 7px;
+    border-radius: 6px;
     background: var(--bg-input);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
     text-decoration: none;
     transition: all 0.15s ease;
+    user-select: none;
 }
 .pagination-btn:hover {
     border-color: var(--gold-primary);
     color: var(--gold-primary);
+    background: rgba(245, 158, 11, 0.12);
 }
 .pagination-btn.active {
     background: var(--gold-gradient);
     border-color: transparent;
-    color: #000000;
+    color: #040711;
     font-weight: 900;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
 .pagination-btn.disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* Alert Boxes */

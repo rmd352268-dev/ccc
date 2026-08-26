@@ -1,17 +1,17 @@
 @if ($paginator->hasPages())
-    <nav role="navigation" aria-label="Pagination Navigation" style="display: flex; align-items: center; gap: 4px;">
-        <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px; font-weight: 700;">
-            <span data-i18n="page_indicator">Страница</span> {{ $paginator->currentPage() }} <span data-i18n="of_indicator">из</span> {{ $paginator->lastPage() }} ({{ $paginator->total() }} <span data-i18n="items_indicator">карт</span>)
+    <nav role="navigation" aria-label="Pagination Navigation" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+        <span style="font-size: 11.5px; color: var(--text-muted); margin-right: 6px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
+            <span data-i18n="page_indicator">Page</span> {{ $paginator->currentPage() }} <span data-i18n="of_indicator">of</span> {{ $paginator->lastPage() }}
         </span>
 
         {{-- Previous Page Link --}}
         @if ($paginator->onFirstPage())
-            <span class="pagination-btn disabled" aria-disabled="true" aria-label="@lang('pagination.previous')" data-i18n="prev_page">
-                &lsaquo; Назад
+            <span class="pagination-btn disabled" aria-disabled="true" aria-label="@lang('pagination.previous')" title="Previous Page">
+                &lsaquo;
             </span>
         @else
-            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="pagination-btn" aria-label="@lang('pagination.previous')" data-i18n="prev_page">
-                &lsaquo; Назад
+            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="pagination-btn" aria-label="@lang('pagination.previous')" title="Previous Page">
+                &lsaquo;
             </a>
         @endif
 
@@ -36,12 +36,12 @@
 
         {{-- Next Page Link --}}
         @if ($paginator->hasMorePages())
-            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="pagination-btn" aria-label="@lang('pagination.next')" data-i18n="next_page">
-                Вперед &rsaquo;
+            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="pagination-btn" aria-label="@lang('pagination.next')" title="Next Page">
+                &rsaquo;
             </a>
         @else
-            <span class="pagination-btn disabled" aria-disabled="true" aria-label="@lang('pagination.next')" data-i18n="next_page">
-                Вперед &rsaquo;
+            <span class="pagination-btn disabled" aria-disabled="true" aria-label="@lang('pagination.next')" title="Next Page">
+                &rsaquo;
             </span>
         @endif
     </nav>

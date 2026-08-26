@@ -468,7 +468,7 @@ class AdminController extends Controller
                   ->orWhere('card_number', 'like', "{$s}%")
                   ->orWhere('bank', 'like', "%{$s}%");
         }
-        $cards = $query->latest('id')->paginate(20);
+        $cards = $query->latest('id')->paginate(10)->withQueryString();
         return view('admin.cards.index', compact('cards'));
     }
 
