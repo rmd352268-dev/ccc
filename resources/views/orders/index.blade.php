@@ -65,7 +65,7 @@
     @if($orders->hasPages())
         <div class="bulk-bar">
             <div></div>
-            <div>{{ $orders->links() }}</div>
+            <div>{{ $orders->links('vendor.pagination.custom') }}</div>
         </div>
     @endif
 </div>
