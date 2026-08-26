@@ -207,6 +207,39 @@
         position: relative;
     }
 
+    .recharge-warning-box {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-top: 16px;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.08);
+    }
+    .recharge-warning-title {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #EF4444;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+    .recharge-warning-desc {
+        font-size: 11px;
+        line-height: 1.5;
+        color: #F87171;
+        font-weight: 600;
+    }
+    [data-theme="light"] .recharge-warning-box {
+        background: #FEF2F2;
+        border-color: #FCA5A5;
+    }
+    [data-theme="light"] .recharge-warning-desc {
+        color: #B91C1C !important;
+    }
+
     @media (max-width: 900px) {
         .crypto-cards-container {
             grid-template-columns: 1fr;
@@ -430,7 +463,7 @@
     <div class="recharge-modal-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i class="fa-solid fa-receipt" style="color: var(--gold-primary);"></i> Submit Payment Verification
+                <i class="fa-solid fa-file-invoice-dollar" style="color: var(--gold-primary);"></i> Submit Payment Verification
             </h3>
             <button type="button" onclick="closeRechargeModal()" style="background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer;">&times;</button>
         </div>
@@ -446,7 +479,7 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Credited Account (Sender)</label>
+                    <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Credited Account</label>
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #10B981; padding: 6px 0; font-family: monospace;">
                         <i class="fa-solid fa-circle-user"></i> @ {{ session('user_username', 'Active User') }}
                     </div>
@@ -466,28 +499,56 @@
                 </div>
             </div>
 
-            <!-- Deposit Amount Field -->
+            <!-- 1. Deposit Amount Field -->
             <div class="form-group" style="margin-bottom: 14px;">
                 <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Deposit Amount ($ USD / USDT)</label>
                 <div style="position: relative;">
                     <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #10B981;">$</span>
-                    <input type="number" step="0.01" min="1" name="amount" class="form-control" placeholder="e.g. 50.00" style="padding-left: 28px; font-weight: 800; font-family: monospace; font-size: 15px;" required autofocus>
+                    <input type="number" step="0.01" min="1" name="amount" class="form-control" placeholder="Enter Deposit Amount (e.g. 50.00)" style="padding-left: 28px; font-weight: 800; font-family: monospace; font-size: 14.5px;" required autofocus>
                 </div>
             </div>
 
-            <!-- Account Name / Sender Wallet Details -->
-            <div class="form-group" style="margin-bottom: 20px;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Account Name / Sender Wallet Address</label>
-                <input type="text" name="txid" class="form-control" placeholder="Enter your Account Name or Sender Wallet Address..." style="font-family: monospace; font-size: 12px;">
-                <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: block;">
-                    * Укажите имя аккаунта отправителя или кошелек для мгновенного зачисления.
+            <!-- 2. Account Name Field -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Account Name (Registered Website Username)</label>
+                <input type="text" name="account_name" value="{{ session('user_username', '') }}" class="form-control" placeholder="Enter your website account name..." style="font-family: monospace; font-size: 12.5px; font-weight: 700;" required>
+                <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px; display: block;">
+                    * The username of the account you opened and are currently logged into for receiving the balance.
                 </span>
             </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <!-- 3. Telegram Username Field -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Telegram Username (@username)</label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #38BDF8;"><i class="fa-brands fa-telegram"></i></span>
+                    <input type="text" name="telegram_username" class="form-control" placeholder="@your_telegram_username" style="padding-left: 32px; font-family: monospace; font-size: 12.5px; font-weight: 600;" required>
+                </div>
+                <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px; display: block;">
+                    * Enter your Telegram username for instant payment verification, proof review, and fast credit.
+                </span>
+            </div>
+
+            <!-- 4. Optional TxID / Hash / Sender Details -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: var(--text-primary);">Transaction Hash / Sender Wallet (Optional)</label>
+                <input type="text" name="txid" class="form-control" placeholder="Transaction Hash (TxID) or Sender Address (Optional)..." style="font-family: monospace; font-size: 12px;">
+            </div>
+
+            <!-- Red Warning Notice in English -->
+            <div class="recharge-warning-box">
+                <div class="recharge-warning-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Warning / Important Notice
+                </div>
+                <div class="recharge-warning-desc">
+                    Please provide accurate and genuine transaction details. Submitting fake, altered, or incorrect payment proofs will result in an <strong>immediate permanent ban</strong> of your account and forfeiture of all assets!
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
                 <button type="button" class="btn-reset" onclick="closeRechargeModal()">Cancel</button>
-                <button type="submit" class="btn-search" style="padding: 10px 22px;">
-                    <i class="fa-solid fa-paper-plane"></i> Submit Recharge Request
+                <button type="submit" class="btn-search" style="padding: 10px 24px; font-weight: 800; font-size: 13px;">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Recharge
                 </button>
             </div>
         </form>
