@@ -175,6 +175,39 @@ class TelegramNotificationService
     }
 
     /**
+     * Send Security Intrusion Alert to Admin Telegram
+     */
+    public static function sendSecurityAlert(string $alertType, string $details = '', $request = null): bool
+    {
+        try {
+            $settings = CryptoSetting::firstOrCreate(['id' => 1]);
+            $botToken = trim($settings->telegram_bot_token ?? '');
+            $chatId = trim($settings->telegram_chat_id ?? '');
+
+            if (empty($botToken) || empty($chatId)) return false;
+
+            $ip = $request ? $request->ip() : 'Tor/Internal';
+            $uri = $request ? $request->fullUrl() : 'N/A';
+            $method = $request ? $request->method() : 'N/A';
+            $userAgent = $request ? substr($request->userAgent() ?? 'Unknown', 0, 150) : 'N/A';
+            $time = date('Y-m-d H:i:s') . ' UTC';
+
+            $text = "🚨 <b>[SECURITY ALERT] ПОПЫТКА ВЗЛОМА / INTRUSION ATTEMPT</b>\n\n"
+                  . "⚠️ <b>Тип (Type):</b> {$alertType}\n"
+                  . "📝 <b>Детали (Details):</b> <code>{$details}</code>\n"
+                  . "🌐 <b>URL:</b> <code>{$method} {$uri}</code>\n"
+                  . "🕵️ <b>User-Agent:</b> <code>{$userAgent}</code>\n"
+                  . "📅 <b>Время (Time):</b> {$time}\n\n"
+                  . "🛡️ <i>Запрос был автоматически заблокирован системой защиты.</i>";
+
+            return self::sendSimpleMessage($text);
+        } catch (\Exception $e) {
+            Log::error("Security Alert Telegram Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Send simple Telegram message
      */
     public static function sendSimpleMessage(string $text): bool
@@ -197,3 +230,4 @@ class TelegramNotificationService
         }
     }
 }
+

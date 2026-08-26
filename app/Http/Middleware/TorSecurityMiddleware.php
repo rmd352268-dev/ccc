@@ -18,6 +18,12 @@ class TorSecurityMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // 1. Intrusion Detection System (IDS): Inspect for attack signatures
+        if ($attackInfo = $this->detectAttack($request)) {
+            $this->reportAndLogAttack($attackInfo, $request);
+            return response('', 404, ['Content-Type' => 'text/plain']);
+        }
+
         $torEnforced = config('security.tor_only_enforce', false);
 
         // If Tor-only enforcement is active, perform access validation
@@ -32,6 +38,70 @@ class TorSecurityMiddleware
         $this->applySecurityHeaders($response, $request);
 
         return $response;
+    }
+
+    /**
+     * Inspect request URI, query parameters, and body for attack patterns.
+     */
+    protected function detectAttack(Request $request): ?string
+    {
+        $uri = strtolower($request->getRequestUri());
+        
+        // A. Scanner Probes & Sensitive Path Hunting
+        $badPaths = [
+            '.env', '.git', 'wp-admin', 'wp-login', 'phpmyadmin', 'eval-stdin',
+            'phpinfo', 'telescope', 'debugbar', '_ignition', 'storage/logs',
+            'etc/passwd', 'win.ini', 'boot.ini', 'proc/self', 'select%20', 'union%20select'
+        ];
+        foreach ($badPaths as $bad) {
+            if (str_contains($uri, $bad)) {
+                return "Malicious URL Scanner Probe: '{$bad}'";
+            }
+        }
+
+        // B. Query String & Input Attack Inspection (SQL Injection / XSS / RCE)
+        $allInputs = json_encode($request->all());
+        $attackSignatures = [
+            '/union\s+(all\s+)?select/i' => 'SQL Injection (UNION SELECT)',
+            '/information_schema/i' => 'SQL Injection (information_schema scan)',
+            '/(sleep\(|benchmark\(|waitfor\s+delay)/i' => 'SQL Injection Time-Based Blind',
+            '/<script[\s\S]*?>[\s\S]*?<\/script>/i' => 'Cross-Site Scripting (XSS Script Tag)',
+            '/(cmd\.exe|\/bin\/sh|\/bin\/bash)/i' => 'Remote Command Execution (RCE)',
+            '/(\.\.\/|\.\.\\\\)/i' => 'Directory Path Traversal (../)',
+        ];
+
+        foreach ($attackSignatures as $pattern => $attackName) {
+            if (preg_match($pattern, $allInputs) || preg_match($pattern, $uri)) {
+                return $attackName;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Report attack to Telegram Admin with rate limiting
+     */
+    protected function reportAndLogAttack(string $attackName, Request $request): void
+    {
+        $cacheKey = 'sec_alert_' . md5($attackName . $request->ip() . $request->path());
+        
+        // Alert at most once per 60 seconds for the same attack type
+        if (!Cache::has($cacheKey)) {
+            Cache::put($cacheKey, true, 60);
+            
+            try {
+                if (class_exists(\App\Services\TelegramNotificationService::class)) {
+                    \App\Services\TelegramNotificationService::sendSecurityAlert(
+                        $attackName,
+                        'Target: ' . $request->path(),
+                        $request
+                    );
+                }
+            } catch (\Throwable $e) {
+                // Fail safe silently
+            }
+        }
     }
 
     /**
