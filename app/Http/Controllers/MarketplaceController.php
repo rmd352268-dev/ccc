@@ -134,7 +134,6 @@ class MarketplaceController extends Controller
         if ($user) {
             $hasCompletedDeposit = \App\Models\Deposit::where('username', $user->username)
                 ->where('status', 'completed')
-                ->where('amount', '>=', $minDeposit)
                 ->exists();
         }
 
@@ -142,9 +141,21 @@ class MarketplaceController extends Controller
         $vaultLockEnabled = (bool)($cryptoSettings->activation_enabled ?? true);
         if (!$vaultLockEnabled) {
             $isActivated = true;
+        } elseif ($user) {
+            // PERMANENT ACTIVATION: Once a user deposits, their account remains activated forever even if balance becomes $0.00
+            $isActivated = ($user->is_activated == 1)
+                        || ($totalRecharged > 0)
+                        || ($userBalance >= $minDeposit)
+                        || $hasCompletedDeposit
+                        || ($user->role === 'admin');
+
+            // Save permanent activation to database model
+            if ($isActivated && $user->is_activated != 1) {
+                $user->is_activated = 1;
+                $user->save();
+            }
         } else {
-            // Check if user has deposited min_deposit or has balance or completed deposit
-            $isActivated = ($totalRecharged >= $minDeposit) || ($userBalance >= $minDeposit) || $hasCompletedDeposit;
+            $isActivated = false;
         }
 
         // Fetch user's latest deposit record if any
