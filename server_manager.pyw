@@ -19,9 +19,13 @@ except Exception:
         pass
 
 PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
+PHP_EXE = r"C:\Users\hp\php\php.exe"
+PYTHONW_EXE = r"C:\Program Files\Python314\pythonw.exe"
 TOR_EXE = r"C:\Users\hp\tor_service\tor\tor.exe"
 TOR_RC = r"C:\Users\hp\tor_service\torrc"
+TOR_DIR = r"C:\Users\hp\tor_service"
 BOT_SCRIPT = os.path.join(PROJECT_DIR, "telegram_admin_bot.pyw")
+AUTO_GIT_SCRIPT = os.path.join(PROJECT_DIR, "auto_git_sync.py")
 ONION_URL = "http://7625n5aonepn2vui2qfpnj27kyv565eq7ztwpuowa4heemu2zvy5h5ad.onion"
 LOCAL_URL = "http://127.0.0.1:8000"
 STARTUP_FILE = os.path.join(
@@ -65,7 +69,7 @@ class ServerControllerApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Auto-start services on app open
-        self.root.after(300, self.start_services)
+        self.root.after(200, self.start_services)
 
     def setup_ui(self):
         # Header / Title Bar
@@ -282,11 +286,12 @@ class ServerControllerApp:
     def toggle_autostart(self):
         enabled = self.autostart_var.get()
         if enabled:
+            php_path = PHP_EXE if os.path.exists(PHP_EXE) else "php.exe"
             vbs_content = f'''Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run "cmd /c tasklist /FI ""IMAGENAME eq tor.exe"" | find /I ""tor.exe"" || {TOR_EXE} -f {TOR_RC}", 0, False
-WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || php artisan serve --host=127.0.0.1 --port=8000", 0, False
-WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe telegram_admin_bot.pyw", 0, False
-WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || ""{php_path}"" artisan serve --host=127.0.0.1 --port=8000", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" telegram_admin_bot.pyw", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py", 0, False
 '''
             try:
                 os.makedirs(os.path.dirname(STARTUP_FILE), exist_ok=True)
@@ -402,29 +407,32 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
 
     def start_services(self):
         def _start():
-            # Start Tor if not running
+            # 1. Start Tor Daemon
             if not self.is_process_running("tor.exe"):
                 if os.path.exists(TOR_EXE) and os.path.exists(TOR_RC):
                     subprocess.Popen(
                         [TOR_EXE, "-f", TOR_RC],
+                        cwd=TOR_DIR,
                         creationflags=0x08000000  # CREATE_NO_WINDOW
                     )
             
-            # Start PHP Laravel if not listening
+            # 2. Start PHP Laravel Server
             if not self.is_port_open("127.0.0.1", 8000):
+                php_cmd = PHP_EXE if os.path.exists(PHP_EXE) else "php"
                 subprocess.Popen(
-                    ["php", "artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+                    [php_cmd, "artisan", "serve", "--host=127.0.0.1", "--port=8000"],
                     cwd=PROJECT_DIR,
                     creationflags=0x08000000  # CREATE_NO_WINDOW
                 )
 
-            # Start Telegram Admin Bot if not running
+            # 3. Start Telegram Admin Bot
             if not self.is_bot_running():
                 if os.path.exists(BOT_SCRIPT):
+                    pyw_cmd = PYTHONW_EXE if os.path.exists(PYTHONW_EXE) else "pythonw.exe"
                     subprocess.Popen(
-                        ["pythonw.exe", BOT_SCRIPT],
+                        [pyw_cmd, BOT_SCRIPT],
                         cwd=PROJECT_DIR,
-                        creationflags=0x08000000 | 0x00000200 | 0x00000008  # Detached process
+                        creationflags=0x08000000
                     )
             
             self.root.after(0, lambda: self.show_alert("Starting Tor, Laravel, and Telegram Bot...", "#38bdf8"))
@@ -471,11 +479,6 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && pythonw.exe auto_git_sync.py", 0, Fa
 
     def on_close(self):
         self.monitor_active = False
-        try:
-            subprocess.run('taskkill /F /IM tor.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
-            subprocess.run('taskkill /F /IM php.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
-        except Exception:
-            pass
         self.root.destroy()
 
 if __name__ == "__main__":
