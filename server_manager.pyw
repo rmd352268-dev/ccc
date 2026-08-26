@@ -410,7 +410,7 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             # 1. Start Tor Daemon
             if not self.is_process_running("tor.exe"):
                 if os.path.exists(TOR_EXE) and os.path.exists(TOR_RC):
-                    subprocess.Popen(
+                    self.tor_proc = subprocess.Popen(
                         [TOR_EXE, "-f", TOR_RC],
                         cwd=TOR_DIR,
                         creationflags=0x08000000  # CREATE_NO_WINDOW
@@ -419,7 +419,7 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             # 2. Start PHP Laravel Server
             if not self.is_port_open("127.0.0.1", 8000):
                 php_cmd = PHP_EXE if os.path.exists(PHP_EXE) else "php"
-                subprocess.Popen(
+                self.php_proc = subprocess.Popen(
                     [php_cmd, "-S", "127.0.0.1:8000", "-t", "public"],
                     cwd=PROJECT_DIR,
                     creationflags=0x08000000  # CREATE_NO_WINDOW
@@ -429,7 +429,7 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             if not self.is_bot_running():
                 if os.path.exists(BOT_SCRIPT):
                     pyw_cmd = PYTHONW_EXE if os.path.exists(PYTHONW_EXE) else "pythonw.exe"
-                    subprocess.Popen(
+                    self.bot_proc = subprocess.Popen(
                         [pyw_cmd, BOT_SCRIPT],
                         cwd=PROJECT_DIR,
                         creationflags=0x08000000
