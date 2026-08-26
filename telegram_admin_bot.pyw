@@ -2514,13 +2514,18 @@ def deposit_alert_monitor_loop():
                 user = get_user_by_name_or_id(dep["username"])
                 user_bal = float(user["balance"] or 0.0) if user else 0.0
                 
+                tg_user_info = dep["telegram_username"] if ("telegram_username" in dep.keys() and dep["telegram_username"]) else "Not Provided"
+                txid_info = dep["txid"] if ("txid" in dep.keys() and dep["txid"]) else "DIRECT_DEPOSIT"
+
                 alert_text = (
                     "🚨 <b>[PAYATE CC] NEW DEPOSIT SUBMITTED!</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━\n"
-                    f"👤 <b>User:</b> @{dep['username']}\n"
+                    f"👤 <b>Account Name:</b> @{dep['username']}\n"
+                    f"📱 <b>Telegram:</b> <b>{tg_user_info}</b>\n"
                     f"💵 <b>Amount:</b> <b>${float(dep['amount']):.2f} USD</b>\n"
                     f"💎 <b>Gateway:</b> {dep['currency']}\n"
                     f"🏷️ <b>Ref / Trx:</b> <code>{dep['trx_id']}</code>\n"
+                    f"📝 <b>Sender / TxID:</b> <code>{txid_info}</code>\n"
                     f"🏦 <b>Address:</b> <code>{dep['address']}</code>\n"
                     f"💳 <b>Current Balance:</b> ${user_bal:.2f}\n"
                     f"📅 <b>Time:</b> {dep['created_at']} UTC\n"

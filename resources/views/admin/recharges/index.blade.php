@@ -44,6 +44,7 @@
             <tbody>
                 @forelse($deposits as $d)
                     <tr>
+                        <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #3B82F6;">{{ $d->trx_id }}</td>
                         <td style="font-weight: 600; color: var(--text-primary);">
                             <div>{{ $d->username ?? 'User' }}</div>
                             @if(!empty($d->telegram_username))
