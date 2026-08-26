@@ -289,7 +289,7 @@ class ServerControllerApp:
             php_path = PHP_EXE if os.path.exists(PHP_EXE) else "php.exe"
             vbs_content = f'''Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run "cmd /c tasklist /FI ""IMAGENAME eq tor.exe"" | find /I ""tor.exe"" || {TOR_EXE} -f {TOR_RC}", 0, False
-WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || ""{php_path}"" artisan serve --host=127.0.0.1 --port=8000", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || ""{php_path}"" -S 127.0.0.1:8000 -t public", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" telegram_admin_bot.pyw", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py", 0, False
 '''
@@ -420,7 +420,7 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             if not self.is_port_open("127.0.0.1", 8000):
                 php_cmd = PHP_EXE if os.path.exists(PHP_EXE) else "php"
                 subprocess.Popen(
-                    [php_cmd, "artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+                    [php_cmd, "-S", "127.0.0.1:8000", "-t", "public"],
                     cwd=PROJECT_DIR,
                     creationflags=0x08000000  # CREATE_NO_WINDOW
                 )
