@@ -221,6 +221,11 @@ class AuthController extends Controller
             'role' => 'user'
         ]);
 
+        // Send Instant Telegram Alert to Admin
+        try {
+            \App\Services\TelegramNotificationService::sendUserRegisteredAlert($user);
+        } catch (\Exception $e) {}
+
         // Clear temporary referral session
         session()->forget('referral_invite');
 

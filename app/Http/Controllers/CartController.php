@@ -186,6 +186,12 @@ class CartController extends Controller
             $card->save();
         }
 
+        // Send Instant Telegram Alert to Admin
+        try {
+            $order->total_price = $totalAmount;
+            \App\Services\TelegramNotificationService::sendOrderAlert($order, $cards->count());
+        } catch (\Exception $e) {}
+
         // Clear cart session
         session()->forget('cart');
 

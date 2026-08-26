@@ -25,6 +25,10 @@ if "%ERRORLEVEL%"=="0" (
     start /B "" php artisan serve --host=127.0.0.1 --port=8000
 )
 
+echo [3/3] Checking Telegram Admin Bot...
+start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\telegram_admin_bot.pyw"
+echo Telegram Admin Bot is running.
+
 echo.
 echo ===================================================
 echo   ONION DOMAIN (Open with Tor Browser):
@@ -32,8 +36,10 @@ echo   http://7625n5aonepn2vui2qfpnj27kyv565eq7ztwpuowa4heemu2zvy5h5ad.onion
 echo ===================================================
 echo.
 echo Local Link: http://127.0.0.1:8000
+echo Telegram Bot: @MypayteAdmin_Bot
 echo.
 echo Do not close this window if you want to monitor.
 echo The site will run as long as your PC is on.
 echo ===================================================
 pause
+

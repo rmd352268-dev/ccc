@@ -977,7 +977,9 @@ class AdminController extends Controller
             'admin_pass_1' => $request->filled('admin_pass_1') ? trim($request->admin_pass_1) : $settings->admin_pass_1,
             'admin_pass_2' => $request->filled('admin_pass_2') ? trim($request->admin_pass_2) : $settings->admin_pass_2,
             'admin_pass_3' => $request->filled('admin_pass_3') ? trim($request->admin_pass_3) : $settings->admin_pass_3,
+            'telegram_custom_buttons' => $request->filled('telegram_custom_buttons') ? trim($request->telegram_custom_buttons) : $settings->telegram_custom_buttons,
         ];
+
 
         // Process customizable 4 Perks
         if ($request->has('perk_titles') && is_array($request->perk_titles)) {

@@ -72,4 +72,24 @@ class CryptoSetting extends Model
             ['icon' => 'fa-gem', 'color' => '#A78BFA', 'title' => 'Premium Perks', 'desc' => 'Auto-replacement, priority member support'],
         ];
     }
+
+    public function getTelegramButtons()
+
+    {
+        if (!empty($this->telegram_custom_buttons)) {
+            $decoded = json_decode($this->telegram_custom_buttons, true);
+            if (is_array($decoded) && !empty($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return [
+            ["🚀 /start", "📊 Live Status"],
+            ["💰 Pending Deposits", "👥 User Management"],
+            ["💳 Cards Vault", "🎫 Support Desk"],
+            ["📢 News Feed", "⚙️ Wallets & Config"],
+            ["📦 Wholesale Packs", "📋 Orders & Sales"],
+        ];
+    }
 }
+

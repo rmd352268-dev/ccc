@@ -182,15 +182,15 @@
                 When a user submits a deposit on the website, your Telegram Bot will instantly send a notification with a direct <strong>[ ✅ Approve ]</strong> button. Clicking that button will automatically credit the user's balance without needing to log in to the admin panel!
             </p>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;">
-                <div class="form-group">
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" style="color: #0284C7;">Telegram Bot Token (from @BotFather)</label>
                     <input type="text" name="telegram_bot_token" class="form-control" value="{{ $settings->telegram_bot_token }}" placeholder="e.g. 7123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" style="font-family: monospace;">
                     <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: block;">
                         Create a bot via <strong>@BotFather</strong> on Telegram and paste the token here.
                     </span>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" style="color: #0284C7;">Admin Chat ID (from @userinfobot)</label>
                     <input type="text" name="telegram_chat_id" class="form-control" value="{{ $settings->telegram_chat_id }}" placeholder="e.g. 123456789 or @channel" style="font-family: monospace;">
                     <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: block;">
@@ -198,7 +198,25 @@
                     </span>
                 </div>
             </div>
+
+            <!-- ⌨️ 4-Dot Keyboard Menu Customization -->
+            <div style="background: rgba(5, 9, 17, 0.6); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 10px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="color: #38BDF8; font-weight: 800; margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-table-cells-large"></i> Telegram Bot 4-Dot Menu Buttons (Persistent Reply Keyboard)
+                    </label>
+                    <span style="font-size: 10px; font-weight: 800; color: #10B981; font-family: monospace;">:: 4-DOT GRID ACTIVE</span>
+                </div>
+                <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+                    Configure the quick buttons that appear when tapping the 4-dots <strong>[ :: ]</strong> icon on Telegram. Enter button rows separated by line breaks, and columns separated by <code>|</code> pipe symbol:
+                </p>
+                <textarea name="telegram_custom_buttons" class="form-control" rows="5" style="font-family: monospace; font-size: 12px; font-weight: 700; color: #38BDF8; background: rgba(0,0,0,0.3);">{{ $settings->telegram_custom_buttons ?? "🚀 /start | 📊 Live Status\n💰 Pending Deposits | 👥 User Management\n💳 Cards Vault | 🎫 Support Desk\n📢 News Feed | ⚙️ Crypto Settings\n📦 Wholesale Packs | 📋 Orders & Sales" }}</textarea>
+                <span style="font-size: 10.5px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    💡 <em>Example: <code>🚀 /start | 📊 Live Status</code> creates a 2-button row at the bottom of your Telegram chat.</em>
+                </span>
+            </div>
         </div>
+
 
         <!-- 1. Bitcoin (BTC) Configuration -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 24px;">
