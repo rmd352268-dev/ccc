@@ -62,7 +62,7 @@
                 </button>
             </form>
         </div>
-        <div>{{ $tickets->links() }}</div>
+        <div>{{ $tickets->links('vendor.pagination.custom') }}</div>
     </div>
 </div>
 @endsection
