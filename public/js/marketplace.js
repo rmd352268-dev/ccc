@@ -100,11 +100,56 @@ function showToast(message, isError = false) {
     }, 3000);
 }
 
-// Add to Cart Single Card
-function addToCart(cardId) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    fetch(`/cart/add/${cardId}`, {
+// Helper: Get localized text with fallback
+function getI18nText(key, fallback = '') {
+    const lang = localStorage.getItem('site_lang') || 'ru';
+    if (typeof translations !== 'undefined' && translations[lang] && translations[lang][key]) {
+        return translations[lang][key];
+    }
+    return fallback;
+}
+
+// Update single or multiple card buttons & row visually
+function updateCardCartUI(cardId, inCart, animate = true) {
+    const buttons = document.querySelectorAll(`button[data-card-id="${cardId}"], button[onclick*="addToCart(${cardId}"]`);
+    const inCartLabel = getI18nText('btn_in_cart', 'В корзине');
+    const addLabel = getI18nText('btn_add', 'В корзину');
+
+    buttons.forEach(btn => {
+        const row = btn.closest('tr');
+        if (inCart) {
+            btn.classList.add('in-cart');
+            btn.title = inCartLabel;
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> <span data-i18n="btn_in_cart">${inCartLabel}</span>`;
+            if (row) row.classList.add('row-in-cart');
+            if (animate) {
+                btn.classList.remove('cart-pop-anim');
+                void btn.offsetWidth; // trigger reflow
+                btn.classList.add('cart-pop-anim');
+                setTimeout(() => btn.classList.remove('cart-pop-anim'), 500);
+            }
+        } else {
+            btn.classList.remove('in-cart');
+            btn.title = addLabel;
+            btn.innerHTML = `<i class="fa-solid fa-cart-shopping"></i> <span data-i18n="btn_add">${addLabel}</span>`;
+            if (row) row.classList.remove('row-in-cart');
+        }
+    });
+}
+
+// Add/Toggle Cart Single Card with Real-time Animation
+function addToCart(cardId, btnEl = null) {
+    const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = metaCsrf ? metaCsrf.getAttribute('content') : '';
+
+    const btn = btnEl || document.querySelector(`button[data-card-id="${cardId}"]`);
+    const isCurrentlyInCart = btn ? btn.classList.contains('in-cart') : false;
+    const targetState = !isCurrentlyInCart;
+
+    // Instant visual feedback with bounce animation
+    updateCardCartUI(cardId, targetState, true);
+
+    fetch(`/cart/toggle/${cardId}`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -120,19 +165,23 @@ function addToCart(cardId) {
                 badge.textContent = data.cart_count;
                 badge.style.display = data.cart_count > 0 ? 'flex' : 'none';
             }
+            updateCardCartUI(cardId, data.in_cart !== undefined ? data.in_cart : true, true);
             showToast(data.message);
         } else {
+            // Revert state if error
+            updateCardCartUI(cardId, isCurrentlyInCart, false);
             showToast(data.message, true);
         }
     })
     .catch(err => {
-        showToast('Error adding to cart', true);
+        updateCardCartUI(cardId, isCurrentlyInCart, false);
+        showToast('Error updating cart', true);
     });
 }
 
 // Bulk Selection and Bulk Add
 function toggleSelectAll(masterCheckbox) {
-    const checkboxes = document.querySelectorAll('.card-row-checkbox');
+    const checkboxes = document.querySelectorAll('.card-row-checkbox, .card-select-cb');
     checkboxes.forEach(cb => {
         cb.checked = masterCheckbox.checked;
     });
@@ -140,7 +189,7 @@ function toggleSelectAll(masterCheckbox) {
 }
 
 function updateSelectedCount() {
-    const selected = document.querySelectorAll('.card-row-checkbox:checked');
+    const selected = document.querySelectorAll('.card-row-checkbox:checked, .card-select-cb:checked');
     const countEl = document.getElementById('selected-count');
     const bulkBtn = document.getElementById('btn-bulk-add');
     if (countEl) countEl.textContent = selected.length;
@@ -151,14 +200,18 @@ function updateSelectedCount() {
 }
 
 function addSelectedToCart() {
-    const selected = document.querySelectorAll('.card-row-checkbox:checked');
+    const selected = document.querySelectorAll('.card-row-checkbox:checked, .card-select-cb:checked');
     if (selected.length === 0) {
         showToast('No cards selected!', true);
         return;
     }
 
     const ids = Array.from(selected).map(cb => cb.value);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = metaCsrf ? metaCsrf.getAttribute('content') : '';
+
+    // Optimistically update selected cards UI
+    ids.forEach(id => updateCardCartUI(id, true, true));
 
     fetch('/cart/bulk-add', {
         method: 'POST',
@@ -178,13 +231,19 @@ function addSelectedToCart() {
                 badge.textContent = data.cart_count;
                 badge.style.display = 'flex';
             }
+            if (data.added_ids) {
+                data.added_ids.forEach(id => updateCardCartUI(id, true, true));
+            }
             showToast(data.message);
-            const master = document.getElementById('select-all-header');
+            const master = document.getElementById('select-all') || document.getElementById('select-all-header');
             if (master) master.checked = false;
             toggleSelectAll({ checked: false });
         } else {
             showToast(data.message, true);
         }
+    })
+    .catch(() => {
+        showToast('Error adding selected cards to cart', true);
     });
 }
 
