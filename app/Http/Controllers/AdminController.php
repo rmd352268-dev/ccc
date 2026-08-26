@@ -311,6 +311,7 @@ class AdminController extends Controller
             'secondary_password' => bcrypt($request->secondary_password ?? '1234'),
             'balance' => (float)($request->balance ?? 0.00),
             'total_recharge' => (float)($request->total_recharge ?? 0.00),
+            'is_activated' => ((float)($request->balance ?? 0) > 0 || (float)($request->total_recharge ?? 0) > 0 || (int)$request->is_activated == 1) ? 1 : 0,
             'telegram' => $request->telegram,
             'jabber' => $request->jabber,
             'phone' => $request->phone,
@@ -344,6 +345,10 @@ class AdminController extends Controller
         $user->tier = $request->tier ?? $user->tier;
         $user->status = $request->status ?? $user->status;
 
+        if ($request->has('is_activated')) {
+            $user->is_activated = (int)$request->is_activated;
+        }
+
         // Balance & Total Recharge update
         if ($request->has('balance')) {
             $newBalance = (float)$request->balance;
@@ -362,9 +367,15 @@ class AdminController extends Controller
                 ]);
             }
             $user->balance = $newBalance;
+            if ($newBalance > 0) {
+                $user->is_activated = 1;
+            }
         }
         if ($request->has('total_recharge')) {
             $user->total_recharge = (float)$request->total_recharge;
+            if ($user->total_recharge > 0) {
+                $user->is_activated = 1;
+            }
         }
 
         // Primary Password update
@@ -380,6 +391,18 @@ class AdminController extends Controller
         $user->save();
 
         return back()->with('success', "Client @{$user->username} profile, PIN, and balance updated successfully.");
+    }
+
+    public function toggleActivateUser($id)
+    {
+        if (!$this->checkAuth()) return redirect()->route('admin.login');
+
+        $user = User::findOrFail($id);
+        $user->is_activated = $user->is_activated ? 0 : 1;
+        $user->save();
+
+        $stateText = $user->is_activated ? 'ACTIVATED (Vault Unlocked)' : 'INACTIVE (Vault Locked)';
+        return back()->with('success', "User @{$user->username} account activation status changed to: {$stateText}.");
     }
 
     public function toggleSuspendUser($id)
