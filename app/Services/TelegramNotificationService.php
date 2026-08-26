@@ -133,6 +133,7 @@ class TelegramNotificationService
         if ($user) {
             $user->balance += (float)$deposit->amount;
             $user->total_recharge += (float)$deposit->amount;
+            $user->is_activated = 1; // Permanently activate account
             $user->save();
 
             // Referral Commission
