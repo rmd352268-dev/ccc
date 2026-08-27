@@ -19,6 +19,22 @@ try:
 except Exception:
     pass
 
+# Telegram Live Support & Relay Bridge Integration
+try:
+    import support_bridge
+    from support_bridge import (
+        deliver_admin_reply_to_user,
+        get_user_id_by_admin_msg,
+        get_user_info as get_support_user_info,
+        get_recent_users as get_support_recent_users,
+        get_user_history as get_support_user_history,
+        get_support_stats,
+        set_user_ban_status as set_support_ban_status,
+        broadcast_to_support_users
+    )
+except Exception as e:
+    pass
+
 # Ensure output encoding is safe when running under pythonw
 try:
     if sys.stdout is None:
@@ -1098,7 +1114,7 @@ def get_main_menu_keyboard():
                 {"text": "💳 Cards Vault & Import", "callback_data": "cmd:cards_hub"}
             ],
             [
-                {"text": "🎫 Support Tickets Desk", "callback_data": "cmd:tickets_hub:1"},
+                {"text": "💬 Live Support & Tickets", "callback_data": "cmd:support_live_hub"},
                 {"text": "📦 Wholesale Packs", "callback_data": "cmd:wholesale_hub"}
             ],
             [
@@ -1326,17 +1342,105 @@ def build_cards_hub_view():
     }
     return text, keyboard
 
+def build_support_hub_view():
+    stats = get_support_stats()
+    recent = get_support_recent_users(10)
+    
+    text = (
+        "💬 <b>[LIVE TELEGRAM CUSTOMER SUPPORT HUB]</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"👥 <b>Total Support Users:</b> <code>{stats['total_users']}</code>\n"
+        f"📩 <b>Customer Inquiries:</b> <code>{stats['user_msgs']}</code>\n"
+        f"🛡️ <b>Admin Replies Sent:</b> <code>{stats['admin_replies']}</code>\n"
+        f"🚫 <b>Banned Spammers:</b> <code>{stats['banned_users']}</code>\n"
+        f"🤖 <b>Public Bot:</b> @payate_desk_bot\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "👥 <b>RECENT TELEGRAM INQUIRIES:</b>\n"
+    )
+    
+    buttons = []
+    if not recent:
+        text += "<i>No Telegram support customers registered yet.</i>\n"
+    else:
+        for r in recent:
+            uname = f"@{r['username']}" if r['username'] else "No username"
+            name = f"{r['first_name'] or ''} {r['last_name'] or ''}".strip() or "Customer"
+            st_icon = "🚫" if r['is_banned'] else "🟢"
+            text += f"{st_icon} <b>{name}</b> ({uname})\n🆔 <code>{r['telegram_id']}</code> | 💬 {r['total_messages']} msgs\n"
+            buttons.append([
+                {"text": f"👤 {name} ({uname})", "callback_data": f"support_info:{r['telegram_id']}"},
+                {"text": "↩️ Reply", "callback_data": f"support_reply:{r['telegram_id']}"}
+            ])
+            
+    text += "\n⚡ <i>Swipe & reply to any customer alert to respond, or use buttons below:</i>"
+    
+    ctrl_buttons = [
+        [
+            {"text": "📢 Broadcast to All", "callback_data": "cmd:support_broadcast_prompt"},
+            {"text": "🔄 Refresh", "callback_data": "cmd:support_live_hub"}
+        ],
+        [
+            {"text": "🎫 Website Tickets Desk", "callback_data": "cmd:tickets_hub:1"},
+            {"text": "🔙 Main Menu", "callback_data": "cmd:main_menu"}
+        ]
+    ]
+    buttons.extend(ctrl_buttons)
+    return text, {"inline_keyboard": buttons}
+
+def build_support_user_history_view(user_id):
+    u = get_support_user_info(user_id)
+    history = get_support_user_history(user_id, limit=12)
+    
+    name = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else "Customer"
+    uname = f"@{u['username']}" if u and u['username'] else "No username"
+    st = "🚫 BANNED" if (u and u['is_banned']) else "🟢 ACTIVE"
+    
+    text = (
+        f"📜 <b>[CHAT HISTORY: {name}]</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>Customer:</b> {name} ({uname})\n"
+        f"🆔 <b>Telegram ID:</b> <code>{user_id}</code> | {st}\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"<b>💬 CONVERSATION TRANSCRIPT:</b>\n\n"
+    )
+    
+    if not history:
+        text += "<i>No message history recorded for this user.</i>\n"
+    else:
+        for h in history:
+            sender = "👑 <b>Admin:</b>" if h["sender_type"] == "admin" else f"👤 <b>{name}:</b>"
+            text += f"{sender} {h['message_text']}\n<i>({h['created_at']} UTC)</i>\n\n"
+            
+    ban_action_text = "🟢 Unban User" if (u and u['is_banned']) else "🚫 Ban User"
+    ban_callback = f"support_unban:{user_id}" if (u and u['is_banned']) else f"support_ban:{user_id}"
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "↩️ Reply to User", "callback_data": f"support_reply:{user_id}"},
+                {"text": ban_action_text, "callback_data": ban_callback}
+            ],
+            [
+                {"text": "🔒 Resolve Ticket", "callback_data": f"support_close:{user_id}"},
+                {"text": "🔙 Support Hub", "callback_data": "cmd:support_live_hub"}
+            ]
+        ]
+    }
+    return text, keyboard
+
 def build_tickets_hub_view(page=1):
     tickets, total = list_tickets_data(page=page, per_page=5)
     total_pages = max(1, (total + 4) // 5)
 
     text = (
-        f"🎫 <b>[SUPPORT TICKETS DESK]</b>\n"
+        f"🎫 <b>[WEBSITE SUPPORT TICKETS DESK]</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"Total Tickets: <code>{total}</code> | Page: <b>{page}/{total_pages}</b>\n\n"
     )
 
     buttons = []
+    buttons.append([{"text": "💬 Open Telegram Live Support Hub", "callback_data": "cmd:support_live_hub"}])
+
     if not tickets:
         text += "<i>No support tickets found.</i>\n"
     else:
@@ -1666,6 +1770,24 @@ def process_message(msg):
         return
 
     # ------------------------------------------------------------------
+    # 0. SWIPE-TO-REPLY ON CUSTOMER SUPPORT INQUIRY
+    # ------------------------------------------------------------------
+    reply_to = msg.get("reply_to_message")
+    if reply_to:
+        orig_msg_id = reply_to.get("message_id")
+        target_user_id, _ = get_user_id_by_admin_msg(orig_msg_id)
+        if target_user_id:
+            ok, res_str = deliver_admin_reply_to_user(target_user_id, admin_msg=msg)
+            if ok:
+                send_admin_msg(
+                    f"✅ <b>Reply successfully delivered to User <code>{target_user_id}</code>!</b>\n💬 <i>Sent anonymously via @payate_desk_bot</i>",
+                    {"inline_keyboard": [[{"text": f"📜 History (#{target_user_id})", "callback_data": f"support_history:{target_user_id}"}]]}
+                )
+            else:
+                send_admin_msg(f"❌ <b>Failed to deliver reply:</b> {res_str}")
+            return
+
+    # ------------------------------------------------------------------
     # A. AUTOMATIC FILE UPLOAD HANDLER (.txt, .csv, .dat, .json)
     # ------------------------------------------------------------------
     if doc:
@@ -1744,6 +1866,29 @@ def process_message(msg):
         if text == "/cancel":
             del ADMIN_STATE[chat_id]
             send_admin_msg("❌ Operation cancelled.", get_main_menu_keyboard())
+            return
+
+        if mode == "support_reply":
+            target_user_id = target
+            del ADMIN_STATE[chat_id]
+            ok, res_str = deliver_admin_reply_to_user(target_user_id, admin_msg=msg)
+            if ok:
+                send_admin_msg(
+                    f"✅ <b>Reply successfully delivered to User <code>{target_user_id}</code>!</b>\n💬 <i>Sent anonymously via @payate_desk_bot</i>",
+                    get_main_menu_keyboard()
+                )
+            else:
+                send_admin_msg(f"❌ <b>Failed to deliver reply:</b> {res_str}", get_main_menu_keyboard())
+            return
+
+        elif mode == "support_broadcast":
+            del ADMIN_STATE[chat_id]
+            send_admin_msg("⏳ <i>Broadcasting message to all support customers...</i>")
+            sent, failed = broadcast_to_support_users(text)
+            send_admin_msg(
+                f"✅ <b>Broadcast Completed!</b>\n\n• Successfully Sent: <code>{sent}</code>\n• Failed: <code>{failed}</code>",
+                get_main_menu_keyboard()
+            )
             return
 
         if mode == "add_balance":
@@ -1972,7 +2117,84 @@ def process_message(msg):
         t, k = build_cards_hub_view()
         send_admin_msg(t, k)
 
-    elif text in ["/tickets", "🎫 Support Tickets", "🎫 Support Desk", "Tickets"]:
+    elif text in ["/support", "/support_users", "/recent_customers", "💬 Live Support", "💬 Live Customer Chat", "🎫 Support Tickets", "🎫 Support Desk", "Tickets"]:
+        t, k = build_support_hub_view()
+        send_admin_msg(t, k)
+
+    elif text.startswith("/reply") or text.startswith("/r "):
+        parts = text.split(maxsplit=2)
+        if len(parts) >= 3:
+            try:
+                target_uid = int(parts[1])
+                ok, res_str = deliver_admin_reply_to_user(target_uid, custom_text=parts[2])
+                if ok:
+                    send_admin_msg(f"✅ <b>Reply delivered to Customer <code>{target_uid}</code>!</b>\n💬 <i>Sent anonymously via Support Bot.</i>")
+                else:
+                    send_admin_msg(f"❌ <b>Error:</b> {res_str}")
+            except ValueError:
+                send_admin_msg("❌ Invalid Customer Telegram ID.")
+        else:
+            send_admin_msg("❌ Usage: <code>/reply &lt;user_id&gt; &lt;message&gt;</code>\nExample: <code>/r 123456789 Your balance is updated!</code>")
+
+    elif text.startswith("/support_history"):
+        parts = text.split()
+        if len(parts) >= 2:
+            try:
+                target_uid = int(parts[1])
+                t, k = build_support_user_history_view(target_uid)
+                send_admin_msg(t, k)
+            except ValueError:
+                send_admin_msg("❌ Invalid User ID.")
+        else:
+            send_admin_msg("Usage: <code>/support_history &lt;user_id&gt;</code>")
+
+    elif text.startswith("/support_ban"):
+        parts = text.split()
+        if len(parts) >= 2:
+            try:
+                target_uid = int(parts[1])
+                set_support_ban_status(target_uid, banned=True)
+                send_admin_msg(f"🚫 <b>User <code>{target_uid}</code> is now banned from support.</b>")
+            except ValueError:
+                send_admin_msg("❌ Invalid User ID.")
+        else:
+            send_admin_msg("Usage: <code>/support_ban &lt;user_id&gt;</code>")
+
+    elif text.startswith("/support_unban"):
+        parts = text.split()
+        if len(parts) >= 2:
+            try:
+                target_uid = int(parts[1])
+                set_support_ban_status(target_uid, banned=False)
+                send_admin_msg(f"🟢 <b>User <code>{target_uid}</code> unbanned from support.</b>")
+            except ValueError:
+                send_admin_msg("❌ Invalid User ID.")
+        else:
+            send_admin_msg("Usage: <code>/support_unban &lt;user_id&gt;</code>")
+
+    elif text.startswith("/support_close") or text.startswith("/resolve"):
+        parts = text.split()
+        if len(parts) >= 2:
+            try:
+                target_uid = int(parts[1])
+                close_text = "🔒 <b>Support Ticket Resolved</b>\n\nYour inquiry has been marked as resolved by our team. If you need any further assistance, feel free to send a new message anytime!"
+                deliver_admin_reply_to_user(target_uid, custom_text=close_text)
+                send_admin_msg(f"🔒 <b>Ticket for Customer <code>{target_uid}</code> marked as resolved.</b>")
+            except ValueError:
+                send_admin_msg("❌ Invalid User ID.")
+        else:
+            send_admin_msg("Usage: <code>/support_close &lt;user_id&gt;</code>")
+
+    elif text.startswith("/support_broadcast"):
+        b_msg = text.replace("/support_broadcast", "").strip()
+        if b_msg:
+            send_admin_msg("⏳ <i>Broadcasting message to all support customers...</i>")
+            sent, failed = broadcast_to_support_users(b_msg)
+            send_admin_msg(f"✅ <b>Broadcast Completed!</b>\n\n• Successfully Sent: <code>{sent}</code>\n• Failed: <code>{failed}</code>")
+        else:
+            send_admin_msg("Usage: <code>/support_broadcast Your announcement message</code>")
+
+    elif text in ["/web_tickets", "/tickets"]:
         t, k = build_tickets_hub_view(1)
         send_admin_msg(t, k)
 
@@ -2226,6 +2448,49 @@ def process_callback_query(cq):
         page = int(data.split(":")[2])
         t, k = build_tickets_hub_view(page)
         edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data == "cmd:support_live_hub":
+        t, k = build_support_hub_view()
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data.startswith("support_reply:"):
+        target_uid = int(data.split(":")[1])
+        ADMIN_STATE[str(chat_id)] = {"mode": "support_reply", "target": target_uid}
+        answer_callback(cq_id, f"Type reply for user {target_uid} now.")
+        send_admin_msg(
+            f"✍️ <b>Interactive Support Reply Active:</b>\n\nRecipient Customer ID: <code>{target_uid}</code>\n\n<i>Send your text, photo, voice, or document now. It will be delivered anonymously to this customer via @payate_desk_bot. (Send /cancel to abort)</i>"
+        )
+
+    elif data.startswith("support_ban:"):
+        target_uid = int(data.split(":")[1])
+        set_support_ban_status(target_uid, banned=True)
+        answer_callback(cq_id, f"User {target_uid} banned!", show_alert=True)
+        t, k = build_support_user_history_view(target_uid)
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data.startswith("support_unban:"):
+        target_uid = int(data.split(":")[1])
+        set_support_ban_status(target_uid, banned=False)
+        answer_callback(cq_id, f"User {target_uid} unbanned!", show_alert=True)
+        t, k = build_support_user_history_view(target_uid)
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data.startswith("support_history:") or data.startswith("support_info:"):
+        target_uid = int(data.split(":")[1])
+        t, k = build_support_user_history_view(target_uid)
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data.startswith("support_close:"):
+        target_uid = int(data.split(":")[1])
+        close_text = "🔒 <b>Support Ticket Resolved</b>\n\nYour inquiry has been marked as resolved by our team. If you need any further assistance, feel free to send a new message anytime!"
+        deliver_admin_reply_to_user(target_uid, custom_text=close_text)
+        answer_callback(cq_id, f"Ticket #{target_uid} resolved.", show_alert=True)
+        send_admin_msg(f"🔒 <b>Ticket for Customer <code>{target_uid}</code> marked as resolved.</b>")
+
+    elif data == "cmd:support_broadcast_prompt":
+        ADMIN_STATE[str(chat_id)] = {"mode": "support_broadcast", "target": None}
+        answer_callback(cq_id)
+        send_admin_msg("📢 <b>Interactive Broadcast Mode:</b>\n\nPlease type the announcement message you want to broadcast to all Telegram support customers now: (Send /cancel to abort)")
 
     elif data == "cmd:wholesale_hub":
         t, k = build_wholesale_hub_view()
