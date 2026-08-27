@@ -33,9 +33,9 @@ DB_PATH = os.path.join(PROJECT_DIR, "database", "support_bot.sqlite")
 MAIN_DB_PATH = os.path.join(PROJECT_DIR, "database", "database.sqlite")
 
 DEFAULT_CONFIG = {
-    "bot_token": "8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs",
+    "bot_token": "8986590066:AAH0gLUYjmkZqZ3r96dBKnjLsS5jzDW8lho",
     "admin_chat_id": "8814743492",
-    "support_bot_username": "PayateSupport_Bot",
+    "support_bot_username": "payate_desk_bot",
     "tor_socks_proxy": "socks5h://127.0.0.1:9050",
     "use_tor": True,
     "welcome_message": "👋 <b>Welcome to Payate CC 24/7 Live Customer Support!</b>\n\n💬 How can we assist you today? Please send your questions, issues, order number, or screenshots right here.\n\n🛡️ A support specialist will reply directly in this chat shortly.",
