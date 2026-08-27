@@ -165,11 +165,20 @@ class ServerControllerApp:
         f3.pack(fill="x", pady=2)
         self.bot_indicator = tk.Label(f3, text="○", font=("Segoe UI", 10, "bold"), fg="#64748b", bg="#0f172a")
         self.bot_indicator.pack(side="left")
-        tk.Label(f3, text=" 🤖 Telegram Admin Bot", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
+        tk.Label(f3, text=" 🛡️ Telegram Admin Bot", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
         self.bot_val = tk.Label(f3, text="Checking...", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg="#0f172a")
         self.bot_val.pack(side="right")
 
-        # Row 4: Auto Git Sync Engine
+        # Row 4: Telegram Customer Support Bot Daemon
+        f4_bot = tk.Frame(status_box, bg="#0f172a")
+        f4_bot.pack(fill="x", pady=2)
+        self.support_bot_indicator = tk.Label(f4_bot, text="○", font=("Segoe UI", 10, "bold"), fg="#64748b", bg="#0f172a")
+        self.support_bot_indicator.pack(side="left")
+        tk.Label(f4_bot, text=" 💬 Live Support Bot", font=("Segoe UI", 9), fg="#94a3b8", bg="#0f172a").pack(side="left")
+        self.support_bot_val = tk.Label(f4_bot, text="Checking...", font=("Segoe UI", 9, "bold"), fg="#94a3b8", bg="#0f172a")
+        self.support_bot_val.pack(side="right")
+
+        # Row 5: Auto Git Sync Engine
         f4 = tk.Frame(status_box, bg="#0f172a")
         f4.pack(fill="x", pady=2)
         self.git_indicator = tk.Label(f4, text="●", font=("Segoe UI", 10, "bold"), fg="#22c55e", bg="#0f172a")
@@ -212,21 +221,39 @@ class ServerControllerApp:
         )
         self.open_local_btn.pack(side="right", fill="x", expand=True, padx=(3, 0))
 
-        # Telegram Open Button
-        tg_btn = tk.Button(
-            card,
-            text="📱 Open Telegram Admin Bot (@MypayteAdmin_Bot)",
-            font=("Segoe UI", 9, "bold"),
+        # Telegram Open Buttons Frame
+        tg_frame = tk.Frame(card, bg="#1e293b")
+        tg_frame.pack(fill="x", pady=2)
+
+        tg_admin_btn = tk.Button(
+            tg_frame,
+            text="🛡️ Admin Bot",
+            font=("Segoe UI", 8, "bold"),
             bg="#0284c7",
             fg="white",
             activebackground="#0369a1",
             relief="flat",
             cursor="hand2",
-            padx=8,
-            pady=5,
+            padx=4,
+            pady=4,
             command=lambda: webbrowser.open("https://t.me/MypayteAdmin_Bot")
         )
-        tg_btn.pack(fill="x", pady=2)
+        tg_admin_btn.pack(side="left", fill="x", expand=True, padx=(0, 2))
+
+        tg_support_btn = tk.Button(
+            tg_frame,
+            text="💬 Support Bot",
+            font=("Segoe UI", 8, "bold"),
+            bg="#0d9488",
+            fg="white",
+            activebackground="#0f766e",
+            relief="flat",
+            cursor="hand2",
+            padx=4,
+            pady=4,
+            command=lambda: webbrowser.open("https://t.me/PayateSupport_Bot")
+        )
+        tg_support_btn.pack(side="right", fill="x", expand=True, padx=(2, 0))
 
         # Git Push Button
         git_btn = tk.Button(
