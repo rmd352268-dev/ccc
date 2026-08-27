@@ -80,9 +80,9 @@ Route::get('/tickets/{id}', [TicketController::class, 'show'])->name('tickets.sh
 Route::post('/tickets/{id}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
 
 // ==========================================
-// HIDDEN ADMIN PANEL (Password Protected)
+// HIDDEN ADMIN PANEL (Secret Custom URL: /airana1713admin)
 // ==========================================
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('airana1713admin')->name('admin.')->group(function () {
     // 3-Step High Security Admin Auth Routes
     Route::get('/login', [AdminController::class, 'login'])->name('login');
     Route::post('/login', [AdminController::class, 'doLogin'])->name('doLogin');

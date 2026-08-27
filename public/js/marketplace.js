@@ -1,6 +1,6 @@
 // Independent Theme Switcher for Public Site vs Admin Panel
 function isAdminArea() {
-    return window.location.pathname.startsWith('/admin');
+    return window.location.pathname.startsWith('/airana1713admin') || window.location.pathname.startsWith('/admin');
 }
 
 function getThemeStorageKey() {
