@@ -3,18 +3,46 @@
 @section('title', 'Support Tickets')
 
 @section('content')
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
     <div>
         <h2 style="font-size: 20px; font-weight: 700; color: #FFF; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-headset" style="color: var(--accent-green);"></i> Support Tickets
+            <i class="fa-solid fa-headset" style="color: var(--accent-green);"></i> Support Desk
         </h2>
         <p style="font-size: 13px; color: #94A3B8; margin-top: 4px;">
-            Need help with your orders or balance? Open a ticket with our 24/7 support team.
+            Need help with your orders or balance? Open a ticket or chat with our 24/7 live support bot.
         </p>
     </div>
 
-    <a href="{{ route('tickets.create') }}" class="btn-search" style="text-decoration: none;">
-        <i class="fa-solid fa-plus"></i> Open New Ticket
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="https://t.me/PayateSupport_Bot" target="_blank" class="btn-search" style="background: linear-gradient(135deg, #0284C7, #0369A1); border-color: #38BDF8; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> 24/7 Live Telegram Support
+        </a>
+        <a href="{{ route('tickets.create') }}" class="btn-search" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-plus"></i> Open Web Ticket
+        </a>
+    </div>
+</div>
+
+<!-- 💬 24/7 Live Telegram Support Bot Hero Card -->
+<div style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #38BDF8; flex-shrink: 0;">
+            <i class="fa-brands fa-telegram"></i>
+        </div>
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="font-size: 16px; font-weight: 800; color: #FFF; margin: 0;">Instant Live Chat Support Bot</h3>
+                <span style="background: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    ● Online 24/7
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #94A3B8; margin: 4px 0 0 0;">
+                For the fastest support, click to message our Telegram Support Bot directly. Send screenshots, order numbers, or questions.
+            </p>
+        </div>
+    </div>
+    <a href="https://t.me/PayateSupport_Bot" target="_blank" style="background: #0284C7; hover: #0369A1; color: #FFF; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
+        <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Message @PayateSupport_Bot <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
     </a>
 </div>
 
