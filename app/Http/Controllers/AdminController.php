@@ -526,33 +526,75 @@ class AdminController extends Controller
         $cardNum = preg_replace('/\D/', '', $request->card_number);
         $bin = substr($cardNum, 0, 6);
 
+        // Standardize exp_date format to MM/YY
+        $expDate = trim($request->exp_date);
+        if (preg_match('/^(\d{1,2})[\/\-\.](\d{2,4})$/', $expDate, $m)) {
+            $month = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $year = substr($m[2], -2);
+            $expDate = "{$month}/{$year}";
+        }
+
+        // Auto-detect Brand if empty or default
+        $brand = strtoupper(trim($request->brand ?? ''));
+        if (empty($brand) || $brand === 'AUTO') {
+            if (str_starts_with($cardNum, '4')) {
+                $brand = 'VISA';
+            } elseif (preg_match('/^(5[1-5]|2[2-7])/', $cardNum)) {
+                $brand = 'MASTERCARD';
+            } elseif (preg_match('/^3[47]/', $cardNum)) {
+                $brand = 'AMEX';
+            } elseif (preg_match('/^(6011|65|64[4-9])/', $cardNum)) {
+                $brand = 'DISCOVER';
+            } elseif (str_starts_with($cardNum, '35')) {
+                $brand = 'JCB';
+            } else {
+                $brand = 'VISA';
+            }
+        }
+
+        $countryCode = strtoupper(trim($request->country_code ?? 'US'));
+        $countryName = trim($request->country_name ?? '');
+        if (empty($countryName)) {
+            $countryName = CountryHelper::getCountryName($countryCode);
+        }
+
+        $holderName = trim($request->holder_name ?? '');
+        $address = trim($request->address ?? '');
+        $city = trim($request->city ?? '');
+        $state = trim($request->state ?? '');
+        $zip = trim($request->zip ?? '');
+        $phone = trim($request->phone ?? '');
+        $email = trim($request->email ?? '');
+
         Card::create([
             'bin' => $bin,
-            'brand' => strtoupper($request->brand ?? 'VISA'),
+            'brand' => $brand,
             'type' => strtoupper($request->type ?? 'CREDIT'),
             'card_number' => $cardNum,
-            'exp_date' => $request->exp_date,
-            'cvv' => $request->cvv,
-            'holder_name' => $request->holder_name,
-            'address' => $request->address,
-            'city' => $request->city,
-            'state' => $request->state,
-            'zip' => $request->zip,
-            'country_code' => strtoupper($request->country_code ?? 'US'),
-            'country_name' => $request->country_name ?? 'United States',
-            'bank' => strtoupper($request->bank ?? 'UNKNOWN BANK'),
-            'base_name' => $request->base_name ?? 'AUTO_BASE_2026',
+            'exp_date' => $expDate,
+            'cvv' => trim($request->cvv),
+            'holder_name' => $holderName ?: null,
+            'address' => $address ?: null,
+            'city' => $city ?: null,
+            'state' => $state ?: null,
+            'zip' => $zip ?: null,
+            'country_code' => $countryCode,
+            'country_name' => $countryName,
+            'bank' => strtoupper(trim($request->bank ?? 'UNKNOWN BANK')),
+            'base_name' => trim($request->base_name ?? (date('Y_m_d') . '_MANUAL_ADD')),
             'price_c' => (float)$request->price_c,
             'price_unc' => (float)($request->price_unc ?? $request->price_c),
-            'has_name' => (bool)$request->holder_name,
-            'has_address' => (bool)$request->address,
-            'has_zip' => (bool)$request->zip,
-            'has_phone' => (bool)$request->phone,
-            'has_mail' => (bool)$request->email,
+            'phone' => $phone ?: null,
+            'email' => $email ?: null,
+            'has_name' => !empty($holderName),
+            'has_address' => !empty($address),
+            'has_zip' => !empty($zip),
+            'has_phone' => !empty($phone),
+            'has_mail' => !empty($email),
             'status' => 'available',
         ]);
 
-        return redirect()->route('admin.cards.index')->with('success', "Card with BIN {$bin} added successfully.");
+        return redirect()->route('admin.cards.index')->with('success', "Card with BIN {$bin} added successfully to inventory.");
     }
 
     public function editCard($id)
@@ -571,24 +613,52 @@ class AdminController extends Controller
         $cardNum = preg_replace('/\D/', '', $request->card_number ?? $card->card_number);
         $bin = substr($cardNum, 0, 6);
 
+        $expDate = trim($request->exp_date ?? $card->exp_date);
+        if (preg_match('/^(\d{1,2})[\/\-\.](\d{2,4})$/', $expDate, $m)) {
+            $month = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $year = substr($m[2], -2);
+            $expDate = "{$month}/{$year}";
+        }
+
+        $countryCode = strtoupper(trim($request->country_code ?? $card->country_code));
+        $countryName = trim($request->country_name ?? '');
+        if (empty($countryName)) {
+            $countryName = CountryHelper::getCountryName($countryCode);
+        }
+
+        $holderName = trim($request->holder_name ?? $card->holder_name ?? '');
+        $address = trim($request->address ?? $card->address ?? '');
+        $city = trim($request->city ?? $card->city ?? '');
+        $state = trim($request->state ?? $card->state ?? '');
+        $zip = trim($request->zip ?? $card->zip ?? '');
+        $phone = trim($request->phone ?? $card->phone ?? '');
+        $email = trim($request->email ?? $card->email ?? '');
+
         $card->update([
             'bin' => $bin,
             'brand' => strtoupper($request->brand ?? $card->brand),
             'type' => strtoupper($request->type ?? $card->type),
             'card_number' => $cardNum,
-            'exp_date' => $request->exp_date ?? $card->exp_date,
-            'cvv' => $request->cvv ?? $card->cvv,
-            'holder_name' => $request->holder_name ?? $card->holder_name,
-            'address' => $request->address ?? $card->address,
-            'city' => $request->city ?? $card->city,
-            'state' => $request->state ?? $card->state,
-            'zip' => $request->zip ?? $card->zip,
-            'country_code' => strtoupper($request->country_code ?? $card->country_code),
-            'country_name' => $request->country_name ?? $card->country_name,
-            'bank' => strtoupper($request->bank ?? $card->bank),
-            'base_name' => $request->base_name ?? $card->base_name,
+            'exp_date' => $expDate,
+            'cvv' => trim($request->cvv ?? $card->cvv),
+            'holder_name' => $holderName ?: null,
+            'address' => $address ?: null,
+            'city' => $city ?: null,
+            'state' => $state ?: null,
+            'zip' => $zip ?: null,
+            'country_code' => $countryCode,
+            'country_name' => $countryName,
+            'bank' => strtoupper(trim($request->bank ?? $card->bank)),
+            'base_name' => trim($request->base_name ?? $card->base_name),
             'price_c' => (float)($request->price_c ?? $card->price_c),
             'price_unc' => (float)($request->price_unc ?? $card->price_unc),
+            'phone' => $phone ?: null,
+            'email' => $email ?: null,
+            'has_name' => !empty($holderName),
+            'has_address' => !empty($address),
+            'has_zip' => !empty($zip),
+            'has_phone' => !empty($phone),
+            'has_mail' => !empty($email),
             'status' => $request->status ?? $card->status,
         ]);
 
