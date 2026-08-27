@@ -12,10 +12,10 @@
             </a>
             <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
                 <i class="fa-solid fa-credit-card" style="color: var(--gold-primary);"></i>
-                Add Single Card (ম্যানুয়াল / অটো-ফিলাপ)
+                Add Single Card
             </h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">
-                Add a single credit/debit card to live inventory. You can fill fields manually or paste complete raw card details into the <strong>Smart Auto-Filler</strong> below.
+                Add a single credit or debit card to live inventory. Fill the fields manually or paste complete raw card details into the <strong>Smart Auto-Filler</strong> below.
             </p>
         </div>
         <div style="display: flex; gap: 10px;">
@@ -29,7 +29,7 @@
     </div>
 
     <!-- ==================================================== -->
-    <!-- ⚡ SMART AUTO-FILLER / QUICK PASTE SECTION           -->
+    <!-- SMART AUTO-FILLER / QUICK PASTE SECTION              -->
     <!-- ==================================================== -->
     <div class="filter-card" style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); border-radius: 12px; padding: 22px; margin-bottom: 24px; position: relative; overflow: hidden;">
         <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(to bottom, #F59E0B, #10B981);"></div>
@@ -47,7 +47,7 @@
                         </span>
                     </h3>
                     <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                        Paste card raw details in one go (Pipe <code>|</code>, Colon <code>:</code>, Semicolon <code>;</code>, Tab, CSV, Key-Value, or JSON) & click Auto-Fill.
+                        Paste card raw details (Pipe <code>|</code>, Colon <code>:</code>, Semicolon <code>;</code>, Tab, CSV, Key-Value, or JSON) & click Auto-Fill.
                     </p>
                 </div>
             </div>
@@ -69,6 +69,7 @@
         <div style="margin-bottom: 12px;">
             <textarea id="autofill_input" class="form-control" rows="3" style="font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #F8FAFC;" placeholder="Paste card line or dump here, e.g.:
 4165980011223344|08/29|789|John Doe|10 Downing St|London|Greater London|SW1A 2AA|GB|+447900112233|john.doe@example.com|REVOLUT, LTD.|DEBIT|2.50
+or separate names: 4165980011223344|08|29|789|John|Doe|10 Downing St|London|SW1A 2AA|GB
 or key-value: Card: 4165980011223344 Exp: 08/29 CVV: 789 Name: John Doe..."></textarea>
         </div>
 
@@ -78,8 +79,8 @@ or key-value: Card: 4165980011223344 Exp: 08/29 CVV: 789 Name: John Doe..."></te
                 <span>Paste details above and click <strong>Auto-Fill Form Fields</strong>.</span>
             </div>
 
-            <button type="button" id="btn_run_autofill" onclick="executeAutoFill()" class="btn-search" style="padding: 8px 20px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none; box-shadow: 0 4px 14px rgba(245,158,11,0.35);">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ Auto-Fill Form Fields
+            <button type="button" id="btn_run_autofill" onclick="executeAutoFill()" class="btn-search" style="padding: 8px 20px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none; box-shadow: 0 4px 14px rgba(245,158,11,0.35); cursor: pointer;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Form Fields
             </button>
         </div>
     </div>
@@ -91,7 +92,7 @@ or key-value: Card: 4165980011223344 Exp: 08/29 CVV: 789 Name: John Doe..."></te
         <form action="{{ route('admin.cards.store') }}" method="POST" id="card-add-form">
             @csrf
 
-            <!-- Section: Primary Card Credentials -->
+            <!-- Section 1: Core Credentials -->
             <div style="margin-bottom: 20px;">
                 <h4 style="font-size: 13.5px; font-weight: 800; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-credit-card"></i> 1. Card Credentials & Core Info
@@ -172,7 +173,7 @@ or key-value: Card: 4165980011223344 Exp: 08/29 CVV: 789 Name: John Doe..."></te
                 </div>
             </div>
 
-            <!-- Section: Fullz Information -->
+            <!-- Section 2: Fullz Information -->
             <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                 <h4 style="font-size: 13.5px; font-weight: 800; color: #93C5FD; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-address-card"></i> 2. Holder Fullz Information (Optional)
@@ -254,7 +255,7 @@ function syncCountryFromSelect(select) {
 
 // Select country in dropdown by code or name
 function setCountryByCodeOrName(val) {
-    if (!val) return;
+    if (!val) return false;
     const select = document.getElementById('country_select');
     const cleanVal = val.trim().toUpperCase();
     
@@ -284,7 +285,7 @@ function detectBrandFromNumber(num) {
 }
 
 function onCardNumberChange(val) {
-    const clean = val.replace(/\D/g, '');
+    const clean = (val || '').replace(/\D/g, '');
     const binBadge = document.getElementById('detected_bin_badge');
     const binText = document.getElementById('bin_text');
     
@@ -507,7 +508,7 @@ function parseCardRawText(text) {
             }
         }
 
-        // Now process geoTokens to separate Holder Name vs Street Address vs City vs State
+        // Process geoTokens to separate Holder Name vs Street Address vs City vs State
         let addrIdx = -1;
         for (let i = 0; i < geoTokens.length; i++) {
             if (isAddressToken(geoTokens[i])) {
@@ -540,9 +541,7 @@ function parseCardRawText(text) {
         } else {
             // No explicit street address pattern found
             if (geoTokens.length > 0) {
-                // If token 0 looks like a pure name (only letters and spaces)
                 if (/^[a-zA-Z\s\.\'\-]+$/.test(geoTokens[0])) {
-                    // Check if token 0 and token 1 are separate First & Last names (e.g. "John" and "Smith")
                     if (geoTokens.length >= 2 && !/\s/.test(geoTokens[0]) && !/\s/.test(geoTokens[1]) && /^[a-zA-Z\.\'\-]+$/.test(geoTokens[1])) {
                         result.holder_name = geoTokens[0] + ' ' + geoTokens[1];
                         if (geoTokens[2] && !result.address) result.address = geoTokens[2];
@@ -557,7 +556,6 @@ function parseCardRawText(text) {
                         if (geoTokens[4] && !result.zip) result.zip = geoTokens[4];
                     }
                 } else {
-                    // Token 0 does not look like a pure name, assign as address
                     result.address = geoTokens[0];
                     if (geoTokens[1] && !result.city) result.city = geoTokens[1];
                     if (geoTokens[2] && !result.state) result.state = geoTokens[2];
@@ -605,18 +603,6 @@ function parseCardRawText(text) {
 
     return result;
 }
-        if (cvvMatch) {
-            for (let c of cvvMatch) {
-                if (c !== result.card_number && !result.exp_date?.includes(c)) {
-                    result.cvv = c;
-                    break;
-                }
-            }
-        }
-    }
-
-    return result;
-}
 
 // Execute AutoFill into form inputs
 function executeAutoFill() {
@@ -630,7 +616,6 @@ function executeAutoFill() {
     }
 
     let filledCount = 0;
-    const highlightFields = [];
 
     function setVal(id, val) {
         if (val === undefined || val === null || val === '') return;
@@ -640,7 +625,6 @@ function executeAutoFill() {
             el.classList.remove('field-highlight');
             void el.offsetWidth; // trigger reflow
             el.classList.add('field-highlight');
-            highlightFields.push(id);
             filledCount++;
         }
     }
@@ -661,13 +645,19 @@ function executeAutoFill() {
     if (parsed.cvv) setVal('cvv', parsed.cvv);
     if (parsed.brand) {
         const brandSelect = document.getElementById('brand');
-        if (brandSelect) brandSelect.value = parsed.brand.toUpperCase();
-        highlightFields.push('brand');
+        if (brandSelect) {
+            brandSelect.value = parsed.brand.toUpperCase();
+            brandSelect.classList.add('field-highlight');
+            filledCount++;
+        }
     }
     if (parsed.type) {
         const typeSelect = document.getElementById('type');
-        if (typeSelect) typeSelect.value = parsed.type.toUpperCase();
-        highlightFields.push('type');
+        if (typeSelect) {
+            typeSelect.value = parsed.type.toUpperCase();
+            typeSelect.classList.add('field-highlight');
+            filledCount++;
+        }
     }
     if (parsed.price_c) setVal('price_c', parsed.price_c);
     if (parsed.bank) setVal('bank', parsed.bank);
@@ -689,7 +679,7 @@ function executeAutoFill() {
     // Success Status Notification
     statusDiv.innerHTML = `
         <span style="color: #10B981; font-weight: 700;">
-            <i class="fa-solid fa-circle-check"></i> Successfully parsed & auto-filled ${filledCount} field(s)! Review details and click "Save Card".
+            <i class="fa-solid fa-circle-check"></i> Successfully parsed & auto-filled ${filledCount} field(s)! Review details and click "Save Card to Stock".
         </span>
     `;
 }
