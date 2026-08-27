@@ -9,5 +9,9 @@ WshShell.Run "cmd /c cd /d C:\Users\hp\Desktop\ccc && tasklist /FI ""IMAGENAME e
 ' Start Telegram Admin Bot
 WshShell.Run "cmd /c cd /d C:\Users\hp\Desktop\ccc && pythonw.exe telegram_admin_bot.pyw", 0, False
 
+' Start Telegram Customer Support Bot
+WshShell.Run "cmd /c cd /d C:\Users\hp\Desktop\ccc && pythonw.exe telegram_support_bot.pyw", 0, False
+
 ' Start Auto Git Sync Engine
 WshShell.Run "cmd /c cd /d C:\Users\hp\Desktop\ccc && pythonw.exe auto_git_sync.py", 0, False
+
