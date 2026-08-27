@@ -29,8 +29,15 @@ from support_bridge import (
 )
 
 # ----------------------------------------------------------------------
-# WINDOWS OUTPUT ENCODING COMPATIBILITY
+# WINDOWS OUTPUT ENCODING & PYTHONW SILENT COMPATIBILITY
 # ----------------------------------------------------------------------
+def safe_print(*args, **kwargs):
+    try:
+        if sys.stdout and hasattr(sys.stdout, 'write') and not getattr(sys.stdout, 'closed', False):
+            print(*args, **kwargs)
+    except Exception:
+        pass
+
 try:
     if sys.stdout is None:
         sys.stdout = open(os.devnull, 'w', encoding='utf-8')
@@ -60,7 +67,7 @@ def enforce_single_instance():
         import ctypes
         _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\PayateSupportTelegramBotMutex")
         if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-            print("Another instance of Payate Support Bot is already running. Exiting.")
+            safe_print("Another instance of Payate Support Bot is already running. Exiting.")
             sys.exit(0)
     except Exception:
         pass
@@ -706,12 +713,12 @@ def process_callback_query(cb):
 def main():
     enforce_single_instance()
 
-    print("==================================================")
-    print(f"[+] PAYATE CC TELEGRAM LIVE SUPPORT BOT STARTED")
-    print(f"[+] Bot Username: @{CONFIG.get('support_bot_username', 'payate_desk_bot')}")
-    print(f"[+] Admin ID: {ADMIN_CHAT_ID}")
-    print(f"[+] Tor SOCKS5: {'Active' if CONFIG.get('use_tor') else 'Direct'}")
-    print("==================================================")
+    safe_print("==================================================")
+    safe_print(f"[+] PAYATE CC TELEGRAM LIVE SUPPORT BOT STARTED")
+    safe_print(f"[+] Bot Username: @{CONFIG.get('support_bot_username', 'payate_desk_bot')}")
+    safe_print(f"[+] Admin ID: {ADMIN_CHAT_ID}")
+    safe_print(f"[+] Tor SOCKS5: {'Active' if CONFIG.get('use_tor') else 'Direct'}")
+    safe_print("==================================================")
 
     # Flush old updates
     try:
