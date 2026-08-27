@@ -708,11 +708,9 @@ def process_callback_query(cb):
     answer_callback(cb_id)
 
 # ----------------------------------------------------------------------
-# MAIN POLLING LOOP
+# MAIN POLLING LOOP & THREAD LAUNCHER
 # ----------------------------------------------------------------------
-def main():
-    enforce_single_instance()
-
+def run_support_bot_loop():
     safe_print("==================================================")
     safe_print(f"[+] PAYATE CC TELEGRAM LIVE SUPPORT BOT STARTED")
     safe_print(f"[+] Bot Username: @{CONFIG.get('support_bot_username', 'payate_desk_bot')}")
@@ -749,9 +747,24 @@ def main():
                     elif "callback_query" in u:
                         process_callback_query(u["callback_query"])
             else:
-                time.sleep(0.5)
-        except Exception:
-            time.sleep(0.5)
+                time.sleep(1.0)
+        except Exception as e:
+            safe_print(f"[!] Support bot polling exception: {e}")
+            time.sleep(1.0)
+
+_support_thread = None
+
+def start_background_support_bot_thread():
+    global _support_thread
+    if _support_thread is not None and _support_thread.is_alive():
+        return _support_thread
+    _support_thread = threading.Thread(target=run_support_bot_loop, daemon=True, name="TelegramSupportBotThread")
+    _support_thread.start()
+    return _support_thread
+
+def main():
+    enforce_single_instance()
+    run_support_bot_loop()
 
 if __name__ == "__main__":
     main()

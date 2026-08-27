@@ -2869,6 +2869,20 @@ def main():
     except Exception as e:
         print(f"[!] Git Sync thread start error: {e}")
 
+    # Start Telegram Live Support Bot in background thread
+    try:
+        import importlib.util
+        support_pyw_path = os.path.join(PROJECT_DIR, "telegram_support_bot.pyw")
+        if os.path.exists(support_pyw_path):
+            spec = importlib.util.spec_from_file_location("telegram_support_bot", support_pyw_path)
+            sup_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(sup_mod)
+            if hasattr(sup_mod, "start_background_support_bot_thread"):
+                sup_mod.start_background_support_bot_thread()
+                print("[+] Telegram Live Support Bot background thread started successfully!")
+    except Exception as e:
+        print(f"[!] Error starting Telegram Support Bot thread: {e}")
+
     # Flush old pending updates before polling
     try:
         flush_res = tg_request("getUpdates", {"offset": -1, "timeout": 0}, timeout=10)
