@@ -43,7 +43,11 @@
                                 <td>
                                     <span class="country-code">{{ $card->country_name }} ({{ $card->country_code }})</span>
                                 </td>
-                                <td style="color: #CBD5E1; font-size: 12px;">{{ $card->bank }}</td>
+                                <td style="color: #94A3B8; font-size: 12px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="fa-solid fa-shield-halved" style="font-size: 10px; color: var(--gold-primary);"></i> Protected Bank
+                                    </span>
+                                </td>
                                 <td><span class="price-c">C$ {{ number_format($card->price_c, 2) }}</span></td>
                                 <td class="text-center">
                                     <form action="{{ route('cart.remove', $card->id) }}" method="POST" style="display: inline;">
