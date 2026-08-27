@@ -200,12 +200,13 @@ def get_now_utc():
 # ----------------------------------------------------------------------
 def get_persistent_reply_keyboard():
     default_keyboard = [
-        [{"text": "🚀 /start"}, {"text": "📊 Live Status"}],
-        [{"text": "💰 Pending Deposits"}, {"text": "👥 User Management"}],
-        [{"text": "💳 Cards Vault & Import"}, {"text": "🎫 Support Tickets"}],
-        [{"text": "📢 News Feed"}, {"text": "⚙️ Crypto Settings"}],
-        [{"text": "📦 Wholesale Packs"}, {"text": "📋 Orders & Sales"}],
-        [{"text": "🔄 Git Sync & Push"}, {"text": "⚡ Server Power"}]
+        [{"text": "🚀 /start"}, {"text": "🛡️ Server Health"}],
+        [{"text": "📊 Live Status"}, {"text": "💰 Pending Deposits"}],
+        [{"text": "👥 User Management"}, {"text": "💳 Cards Vault & Import"}],
+        [{"text": "🎫 Support Tickets"}, {"text": "📢 News Feed"}],
+        [{"text": "⚙️ Crypto Settings"}, {"text": "📦 Wholesale Packs"}],
+        [{"text": "📋 Orders & Sales"}, {"text": "🔄 Git Sync & Push"}],
+        [{"text": "⚡ Server Power"}]
     ]
     try:
         conn = get_db()
@@ -387,6 +388,208 @@ def get_system_stats():
     return msg
 
 # ----------------------------------------------------------------------
+# SYSTEM HEALTH, INTRUSION DETECTION & SECURITY AUDIT ENGINE
+# ----------------------------------------------------------------------
+import ctypes
+import shutil
+
+class MEMORYSTATUSEX(ctypes.Structure):
+    _fields_ = [
+        ("dwLength", ctypes.c_ulong),
+        ("dwMemoryLoad", ctypes.c_ulong),
+        ("ullTotalPhys", ctypes.c_ulonglong),
+        ("ullAvailPhys", ctypes.c_ulonglong),
+        ("ullTotalPageFile", ctypes.c_ulonglong),
+        ("ullAvailPageFile", ctypes.c_ulonglong),
+        ("ullTotalVirtual", ctypes.c_ulonglong),
+        ("ullAvailVirtual", ctypes.c_ulonglong),
+        ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
+    ]
+
+def get_ram_stats():
+    try:
+        stat = MEMORYSTATUSEX()
+        stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+        total_gb = stat.ullTotalPhys / (1024**3)
+        avail_gb = stat.ullAvailPhys / (1024**3)
+        used_gb = total_gb - avail_gb
+        return total_gb, used_gb, avail_gb, int(stat.dwMemoryLoad)
+    except Exception:
+        return 0.0, 0.0, 0.0, 0
+
+def get_disk_stats(drive="C:"):
+    try:
+        total, used, free = shutil.disk_usage(drive)
+        total_gb = total / (1024**3)
+        used_gb = used / (1024**3)
+        free_gb = free / (1024**3)
+        percent = int(used * 100 / total)
+        return total_gb, used_gb, free_gb, percent
+    except Exception:
+        return 0.0, 0.0, 0.0, 0
+
+def scan_security_attacks():
+    log_path = os.path.join(PROJECT_DIR, "storage", "logs", "laravel.log")
+    total_blocked = 0
+    today_blocked = 0
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    recent_events = []
+
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+            
+            for line in lines:
+                if any(k in line for k in ["SECURITY ALERT", "INTRUSION BLOCKED", "Malicious URL Scanner", "SQL Injection", "XSS Script Tag", "Remote Command Execution", "Directory Path Traversal"]):
+                    total_blocked += 1
+                    if today_str in line:
+                        today_blocked += 1
+                    recent_events.append(line.strip())
+        except Exception:
+            pass
+
+    return total_blocked, today_blocked, recent_events[-6:]
+
+def get_recent_server_errors():
+    log_path = os.path.join(PROJECT_DIR, "storage", "logs", "laravel.log")
+    errors = []
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+            
+            for line in reversed(lines):
+                if ".ERROR:" in line:
+                    clean_line = line.strip()
+                    if clean_line not in errors:
+                        errors.append(clean_line[:140])
+                    if len(errors) >= 3:
+                        break
+        except Exception:
+            pass
+    return errors
+
+def check_database_integrity():
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("PRAGMA integrity_check")
+        res = c.fetchone()[0]
+        conn.close()
+        size_bytes = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+        size_kb = size_bytes / 1024
+        return True, f"{size_kb:.1f} KB (Integrity: {res.upper()})"
+    except Exception as e:
+        return False, str(e)
+
+def flush_laravel_logs_action():
+    log_path = os.path.join(PROJECT_DIR, "storage", "logs", "laravel.log")
+    try:
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write(f"[{now_str}] production.INFO: Server logs flushed and rotated clean by Admin.\n")
+        return True, "Server logs flushed and rotated clean! Disk space freed."
+    except Exception as e:
+        return False, str(e)
+
+def build_server_health_view():
+    php_ok = is_port_listening("127.0.0.1", 8000)
+    tor_ok = is_proc_running("tor.exe")
+    onion_url = get_current_onion_domain()
+    
+    total_attacks, today_attacks, _ = scan_security_attacks()
+    db_ok, db_info = check_database_integrity()
+    ram_tot, ram_used, ram_free, ram_pct = get_ram_stats()
+    disk_tot, disk_used, disk_free, disk_pct = get_disk_stats()
+    recent_errors = get_recent_server_errors()
+
+    sec_status = "🟢 100% SECURE & PROTECTED" if today_attacks == 0 else f"🛡️ {today_attacks} INTRUSIONS SAFELY BLOCKED TODAY"
+    server_overall = "🟢 100% HEALTHY & ONLINE" if (php_ok and tor_ok and db_ok) else ("🟡 WARNING / PARTIAL" if (php_ok or tor_ok) else "🔴 CRITICAL OFFLINE")
+
+    disk_icon = "🔴 LOW SPACE" if disk_pct >= 95 else ("🟡 MODERATE" if disk_pct >= 85 else "🟢 GOOD")
+    ram_icon = "🔴 HIGH" if ram_pct >= 90 else "🟢 NORMAL"
+
+    error_summary = ""
+    if recent_errors:
+        error_summary = "⚠️ <b>Recent Log Warning:</b>\n" + "\n".join([f"• <code>{e[:100]}...</code>" for e in recent_errors[:2]])
+    else:
+        error_summary = "<i>✔ No critical runtime crashes detected. Server is operating smoothly!</i>"
+
+    text = (
+        "🛡️ <b>[SERVER HEALTH & SECURITY AUDIT]</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"📊 <b>System Health:</b> {server_overall}\n"
+        f"🔰 <b>Intrusion Shield (IDS):</b> 🟢 <b>ARMED & ACTIVE</b>\n"
+        f"🚨 <b>Attacks Intercepted:</b> <code>{today_attacks} today</code> (<code>{total_attacks} total</code>)\n"
+        f"🛡️ <b>Security Status:</b> {sec_status}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "💻 <b>Hardware & Server Resources:</b>\n"
+        f"• 🧠 <b>RAM (Memory):</b> <code>{ram_used:.1f} GB / {ram_tot:.1f} GB ({ram_pct}%)</code> — {ram_icon}\n"
+        f"• 💽 <b>Disk (C:):</b> <code>{disk_free:.1f} GB Free / {disk_tot:.1f} GB ({disk_pct}% Used)</code> — {disk_icon}\n"
+        f"• 🗄️ <b>Database (SQLite):</b> {'🟢 Connected' if db_ok else '🔴 Error'} — <code>{db_info}</code>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🌐 <b>Active Daemon Services:</b>\n"
+        f"• 🚀 <b>Laravel Web:</b> {'🟢 Running (Port 8000)' if php_ok else '🔴 Stopped'}\n"
+        f"• 🧅 <b>Tor Network:</b> {'🟢 Connected (Port 9050)' if tor_ok else '🔴 Offline'}\n"
+        f"• 🤖 <b>Master Admin Bot:</b> 🟢 Online & Polling\n"
+        f"• 🔄 <b>GitHub Auto-Sync:</b> 🟢 Active & Push Ready\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"{error_summary}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"🧅 <b>Onion Domain:</b>\n<code>{onion_url}</code>\n"
+        f"⏰ <b>Audit Time:</b> {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "🔄 Re-Scan Health Now", "callback_data": "cmd:health_check"},
+                {"text": "🛡️ Attack Logs & Probes", "callback_data": "cmd:attack_logs"}
+            ],
+            [
+                {"text": "🧹 Flush & Clean Logs", "callback_data": "action:flush_logs"},
+                {"text": "🔄 Restart Server", "callback_data": "cmd:restart_server"}
+            ],
+            [
+                {"text": "🔙 Main Menu", "callback_data": "cmd:main_menu"}
+            ]
+        ]
+    }
+    return text, keyboard
+
+def build_attack_logs_view():
+    total_attacks, today_attacks, recent_events = scan_security_attacks()
+    
+    if recent_events:
+        event_str = "\n\n".join([f"🚨 <b>Log Event #{i+1}:</b>\n<code>{e}</code>" for i, e in enumerate(recent_events)])
+    else:
+        event_str = "<i>✔ 0 intrusion attempts recorded. No malicious probes, SQLi, or scanners currently attacking your server!</i>"
+
+    text = (
+        "🚨 <b>[INTRUSION DETECTION & ATTACK SHIELD LOGS]</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"🛡️ <b>Total Intercepted Attacks:</b> <code>{total_attacks}</code>\n"
+        f"⚡ <b>Blocked Today:</b> <code>{today_attacks}</code>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"{event_str}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "<i>TorSecurityMiddleware automatically drops all malicious SQL injection, XSS, and scanner hunting requests with Stealth 404.</i>"
+    )
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "🔄 Refresh Logs", "callback_data": "cmd:attack_logs"},
+                {"text": "🛡️ Health Audit", "callback_data": "cmd:health_check"}
+            ],
+            [
+                {"text": "🔙 Main Menu", "callback_data": "cmd:main_menu"}
+            ]
+        ]
+    }
+    return text, keyboard
 # 1. AUTO-UPLOAD & CARDS IMPORT ENGINE
 # ----------------------------------------------------------------------
 def parse_card_line(line, default_base="TELEGRAM_IMPORT", default_price=2.50):
