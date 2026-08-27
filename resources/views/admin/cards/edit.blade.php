@@ -633,13 +633,26 @@ function executeAutoFill() {
     `;
 }
 
-document.getElementById('autofill_input').addEventListener('paste', function(e) {
-    setTimeout(executeAutoFill, 80);
-});
+// Auto-trigger parse when user pastes or types into the autofill box
+const autofillEditInput = document.getElementById('autofill_input');
+if (autofillEditInput) {
+    autofillEditInput.addEventListener('input', function(e) {
+        if (this.value.trim().length >= 15) {
+            executeAutoFill();
+        }
+    });
+    autofillEditInput.addEventListener('paste', function(e) {
+        setTimeout(executeAutoFill, 80);
+    });
+}
 
 function clearAutoFillBox() {
-    document.getElementById('autofill_input').value = '';
-    document.getElementById('autofill_status').innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--gold-primary);"></i> <span>Paste details above to update form fields.</span>`;
+    const el = document.getElementById('autofill_input');
+    if (el) el.value = '';
+    const statusDiv = document.getElementById('autofill_status');
+    if (statusDiv) {
+        statusDiv.innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--gold-primary);"></i> <span>Paste details above to update form fields.</span>`;
+    }
 }
 </script>
 @endpush

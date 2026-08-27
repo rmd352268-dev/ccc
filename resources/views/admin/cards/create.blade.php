@@ -684,24 +684,42 @@ function executeAutoFill() {
     `;
 }
 
-// Auto-trigger parse when user pastes into the autofill box
-document.getElementById('autofill_input').addEventListener('paste', function(e) {
-    setTimeout(executeAutoFill, 80);
-});
+// Auto-trigger parse when user pastes or types into the autofill box
+const autofillInputEl = document.getElementById('autofill_input');
+if (autofillInputEl) {
+    autofillInputEl.addEventListener('input', function(e) {
+        if (this.value.trim().length >= 15) {
+            executeAutoFill();
+        }
+    });
+    autofillInputEl.addEventListener('paste', function(e) {
+        setTimeout(executeAutoFill, 80);
+    });
+}
 
 function loadSampleFullz() {
-    document.getElementById('autofill_input').value = `4165980011223344|08/29|789|John Doe|10 Downing St|London|Greater London|SW1A 2AA|GB|+447900112233|john.doe@example.com|REVOLUT, LTD.|DEBIT|2.50`;
-    executeAutoFill();
+    const el = document.getElementById('autofill_input');
+    if (el) {
+        el.value = `4165980011223344|08/29|789|John Doe|10 Downing St|London|Greater London|SW1A 2AA|GB|+447900112233|john.doe@example.com|REVOLUT, LTD.|DEBIT|2.50`;
+        executeAutoFill();
+    }
 }
 
 function loadSampleSimple() {
-    document.getElementById('autofill_input').value = `5131620022334455|11/29|891`;
-    executeAutoFill();
+    const el = document.getElementById('autofill_input');
+    if (el) {
+        el.value = `5131620022334455|11/29|891`;
+        executeAutoFill();
+    }
 }
 
 function clearAutoFillBox() {
-    document.getElementById('autofill_input').value = '';
-    document.getElementById('autofill_status').innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--gold-primary);"></i> <span>Paste details above and click <strong>Auto-Fill Form Fields</strong>.</span>`;
+    const el = document.getElementById('autofill_input');
+    if (el) el.value = '';
+    const statusDiv = document.getElementById('autofill_status');
+    if (statusDiv) {
+        statusDiv.innerHTML = `<i class="fa-solid fa-circle-info" style="color: var(--gold-primary);"></i> <span>Paste details above and click <strong>Auto-Fill Form Fields</strong>.</span>`;
+    }
 }
 </script>
 @endpush
