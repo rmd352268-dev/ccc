@@ -25,11 +25,15 @@ if "%ERRORLEVEL%"=="0" (
     start /B "" php artisan serve --host=127.0.0.1 --port=8000
 )
 
-echo [3/4] Checking Telegram Admin Bot...
+echo [3/5] Checking Telegram Admin Bot...
 start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\telegram_admin_bot.pyw"
 echo Telegram Admin Bot is active.
 
-echo [4/4] Starting Auto Git Sync Engine...
+echo [4/5] Checking Telegram Live Support Bot...
+start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\telegram_support_bot.pyw"
+echo Telegram Live Support Bot is active.
+
+echo [5/5] Starting Auto Git Sync Engine...
 start /B "" pythonw.exe "C:\Users\hp\Desktop\ccc\auto_git_sync.py"
 echo GitHub Auto-Sync Engine is active.
 
@@ -40,7 +44,8 @@ echo   http://7625n5aonepn2vui2qfpnj27kyv565eq7ztwpuowa4heemu2zvy5h5ad.onion
 echo ===================================================
 echo.
 echo Local Link: http://127.0.0.1:8000
-echo Telegram Bot: @MypayteAdmin_Bot
+echo Telegram Admin Bot: @MypayteAdmin_Bot
+echo Telegram Support Bot: @PayateSupport_Bot
 echo GitHub Sync: Auto-Sync Active (rmd352268-dev/ccc)
 echo.
 echo All services running in background.
