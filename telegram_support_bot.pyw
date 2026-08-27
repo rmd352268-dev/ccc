@@ -444,6 +444,28 @@ def process_message(msg):
                     send_message(chat_id, "❌ Invalid User ID.")
                 return
 
+            if cmd in ["/history", "/h"]:
+                if len(parts) < 2:
+                    send_message(chat_id, "❌ Usage: <code>/history &lt;user_id&gt;</code>")
+                    return
+                try:
+                    target_id = int(parts[1])
+                    u = get_user_info(target_id)
+                    history = support_bridge.get_user_history(target_id, limit=10)
+                    name = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else "Customer"
+                    uname = f"@{u['username']}" if u and u['username'] else "No username"
+                    h_text = f"📜 <b>CHAT HISTORY FOR {name} ({uname})</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    if not history:
+                        h_text += "<i>No messages recorded yet.</i>\n"
+                    else:
+                        for h in history:
+                            sender = "👑 <b>Admin:</b>" if h["sender_type"] == "admin" else f"👤 <b>{name}:</b>"
+                            h_text += f"{sender} {h['message_text']}\n<i>({h['created_at']} UTC)</i>\n\n"
+                    send_message(chat_id, h_text)
+                except ValueError:
+                    send_message(chat_id, "❌ Invalid User ID.")
+                return
+
         send_message(chat_id, "💡 <i>Swipe & reply to any customer alert message in your Admin Bot, or type <code>/admin</code> to open dashboard.</i>")
         return
 
