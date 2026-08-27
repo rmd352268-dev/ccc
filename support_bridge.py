@@ -367,10 +367,12 @@ def forward_user_message_to_admin(msg):
 
     admin_bot_msg_id = None
 
-    # Forward directly into Admin Bot
+    # ------------------------------------------------------------------
+    # Forward exclusively into the Live Support Bot (@payate_desk_bot)
+    # ------------------------------------------------------------------
     if media_type == "text":
         full_text = f"{header_badge}💬 <b>Message:</b>\n{text_content}"
-        res = tg_api_call("admin", "sendMessage", {
+        res = tg_api_call("support", "sendMessage", {
             "chat_id": ADMIN_CHAT_ID,
             "text": full_text,
             "parse_mode": "HTML",
@@ -381,7 +383,7 @@ def forward_user_message_to_admin(msg):
             admin_bot_msg_id = res.get("result", {}).get("message_id")
     elif media_type == "photo" and photo_file_id:
         full_caption = f"{header_badge}💬 <b>Caption:</b>\n{caption_text}".strip()
-        res = tg_api_call("admin", "sendPhoto", {
+        res = tg_api_call("support", "sendPhoto", {
             "chat_id": ADMIN_CHAT_ID,
             "photo": photo_file_id,
             "caption": full_caption,
@@ -392,7 +394,7 @@ def forward_user_message_to_admin(msg):
             admin_bot_msg_id = res.get("result", {}).get("message_id")
     elif media_type == "document" and doc_file_id:
         full_caption = f"{header_badge}💬 <b>Caption:</b>\n{caption_text}".strip()
-        res = tg_api_call("admin", "sendDocument", {
+        res = tg_api_call("support", "sendDocument", {
             "chat_id": ADMIN_CHAT_ID,
             "document": doc_file_id,
             "caption": full_caption,
@@ -402,7 +404,7 @@ def forward_user_message_to_admin(msg):
         if res.get("ok"):
             admin_bot_msg_id = res.get("result", {}).get("message_id")
     elif media_type == "voice" and voice_file_id:
-        res = tg_api_call("admin", "sendVoice", {
+        res = tg_api_call("support", "sendVoice", {
             "chat_id": ADMIN_CHAT_ID,
             "voice": voice_file_id,
             "caption": header_badge,
@@ -413,7 +415,7 @@ def forward_user_message_to_admin(msg):
             admin_bot_msg_id = res.get("result", {}).get("message_id")
     elif media_type == "video" and video_file_id:
         full_caption = f"{header_badge}💬 <b>Caption:</b>\n{caption_text}".strip()
-        res = tg_api_call("admin", "sendVideo", {
+        res = tg_api_call("support", "sendVideo", {
             "chat_id": ADMIN_CHAT_ID,
             "video": video_file_id,
             "caption": full_caption,
@@ -425,7 +427,7 @@ def forward_user_message_to_admin(msg):
     else:
         # Fallback text relay
         full_text = f"{header_badge}💬 <b>Message:</b>\n{text_content}"
-        res = tg_api_call("admin", "sendMessage", {
+        res = tg_api_call("support", "sendMessage", {
             "chat_id": ADMIN_CHAT_ID,
             "text": full_text,
             "parse_mode": "HTML",
