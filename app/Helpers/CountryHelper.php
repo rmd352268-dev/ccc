@@ -123,4 +123,16 @@ class CountryHelper
 
         return $flags[$code] ?? '🌐';
     }
+
+    public static function getCountryName(string $code): string
+    {
+        $code = strtoupper(trim($code));
+        $countries = self::getAllCountries();
+        foreach ($countries as $c) {
+            if ($c['code'] === $code) {
+                return $c['name'];
+            }
+        }
+        return 'United States';
+    }
 }
