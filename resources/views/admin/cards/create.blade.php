@@ -302,11 +302,43 @@ function onCardNumberChange(val) {
     }
 }
 
+// Helpers for Token Classification
+function isAddressToken(token) {
+    if (!token || typeof token !== 'string') return false;
+    const str = token.trim();
+    if (!str) return false;
+    // Starts with number and space e.g. "10 Downing St", "123 Main Street", "4B Baker St"
+    if (/^\d+[A-Za-z0-9\-\/]*\s+[A-Za-z]/i.test(str)) return true;
+    // Contains common address suffix/prefix words
+    if (/\b(street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr|way|court|ct|square|sq|place|pl|terrace|ter|highway|hwy|building|bldg|apartment|apt|suite|ste|unit|floor|fl|box|p\.?o\.?\s*box|house|flat|rue|via|calle|strasse|str|weg|platz|straat)\b/i.test(str)) {
+        return true;
+    }
+    // Has digits and alphanumeric mix with spaces (e.g. "Route 66", "Block 4")
+    if (/\d/.test(str) && /[a-zA-Z]/.test(str) && /\s/.test(str)) {
+        return true;
+    }
+    return false;
+}
+
+function isZipToken(token) {
+    if (!token || typeof token !== 'string') return false;
+    const str = token.trim();
+    if (!str) return false;
+    if (/^\d{5}(-\d{4})?$/.test(str)) return true;
+    if (/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(str)) return true;
+    if (/^[A-Z]\d[A-Z]\s*\d[A-Z]\d$/i.test(str) || /^\d{4}\s*[A-Z]{2}$/i.test(str)) return true;
+    if (/^\d{4,6}$/.test(str)) return true;
+    return false;
+}
+
 // Universal Smart Card Parser Function
 function parseCardRawText(text) {
     if (!text || typeof text !== 'string') return null;
     const raw = text.trim();
     if (!raw) return null;
+
+    const isoCountries = ['US','GB','UK','CA','AU','DE','FR','IT','ES','NL','BE','CH','SE','NO','DK','FI','RU','CN','JP','KR','IN','BD','PK','AE','SA','BR','MX','AR','CL','CO','ZA','NG','EG','TR','SG','MY','TH','ID','VN','PH','NZ','IE','AT','PL','PT','GR','CZ','RO','HU','UA','IL','QA','KW','HK','TW','KZ','UZ','AZ','GE','AM','BY','BG','HR','RS','SK','SI','LT','LV','EE','IS','LU','CY','MT','MA','KE','GH','CR','PA','DO','PR','EC','UY','VE'];
+    const usStates = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
 
     let result = {};
 
@@ -320,7 +352,15 @@ function parseCardRawText(text) {
                 result.exp_date = String(data.month).padStart(2, '0') + '/' + String(data.year).slice(-2);
             }
             result.cvv = data.cvv || data.cvc || data.security_code || '';
-            result.holder_name = data.holder_name || data.name || data.cardholder || '';
+            
+            let fname = data.first_name || data.fname || '';
+            let lname = data.last_name || data.lname || '';
+            if (fname || lname) {
+                result.holder_name = (fname + ' ' + lname).trim();
+            } else {
+                result.holder_name = data.holder_name || data.name || data.cardholder || data.client || '';
+            }
+
             result.address = data.address || data.street || '';
             result.city = data.city || '';
             result.state = data.state || data.province || '';
@@ -337,10 +377,11 @@ function parseCardRawText(text) {
     }
 
     // 2. Try parsing Key-Value multi-line / labelled format
-    const hasLabels = /card|number|exp|cvv|name|address|city|zip|phone|email/i.test(raw);
+    const hasLabels = /card|number|exp|cvv|name|first|last|address|city|zip|phone|email/i.test(raw);
     if (hasLabels && (raw.includes('\n') || raw.includes(':') || raw.includes('='))) {
         const lines = raw.split(/\r\n|\r|\n/);
         let extractedFromLabels = false;
+        let fname = '', lname = '';
 
         lines.forEach(line => {
             const kvMatch = line.match(/^([^:=]+)[:=]\s*(.+)$/i);
@@ -349,23 +390,29 @@ function parseCardRawText(text) {
                 const k = kvMatch[1].trim().toLowerCase();
                 const v = kvMatch[2].trim();
 
-                if (/^(card|cc|number|pan)$/i.test(k)) result.card_number = v;
-                else if (/^(exp|expiry|exp_date|expiration|date)$/i.test(k)) result.exp_date = v;
-                else if (/^(cvv|cvc|cvv2|security)$/i.test(k)) result.cvv = v;
-                else if (/^(name|holder|cardholder|fullz)$/i.test(k)) result.holder_name = v;
-                else if (/^(address|street|addr)$/i.test(k)) result.address = v;
+                if (/^(card|cc|number|pan|card_number|card_no)$/i.test(k)) result.card_number = v;
+                else if (/^(exp|expiry|exp_date|expiration|date|expiration_date)$/i.test(k)) result.exp_date = v;
+                else if (/^(cvv|cvc|cvv2|security|security_code|cvc2)$/i.test(k)) result.cvv = v;
+                else if (/^(first_name|fname|firstname)$/i.test(k)) fname = v;
+                else if (/^(last_name|lname|lastname|surname)$/i.test(k)) lname = v;
+                else if (/^(name|holder|cardholder|fullz|client|holder_name|card_holder|fullname|full_name)$/i.test(k)) result.holder_name = v;
+                else if (/^(address|street|addr|street_address|address1)$/i.test(k)) result.address = v;
                 else if (/^(city|town)$/i.test(k)) result.city = v;
                 else if (/^(state|province|region)$/i.test(k)) result.state = v;
-                else if (/^(zip|postal|postcode|zipcode)$/i.test(k)) result.zip = v;
+                else if (/^(zip|postal|postcode|zipcode|postal_code)$/i.test(k)) result.zip = v;
                 else if (/^(country|country_code|nation)$/i.test(k)) result.country = v;
-                else if (/^(phone|tel|mobile|cell)$/i.test(k)) result.phone = v;
-                else if (/^(email|mail)$/i.test(k)) result.email = v;
-                else if (/^(bank|issuer)$/i.test(k)) result.bank = v;
+                else if (/^(phone|tel|mobile|cell|telephone)$/i.test(k)) result.phone = v;
+                else if (/^(email|mail|email_address)$/i.test(k)) result.email = v;
+                else if (/^(bank|issuer|bank_name)$/i.test(k)) result.bank = v;
                 else if (/^(brand)$/i.test(k)) result.brand = v;
                 else if (/^(type)$/i.test(k)) result.type = v;
                 else if (/^(price|price_c)$/i.test(k)) result.price_c = v;
             }
         });
+
+        if (fname || lname) {
+            result.holder_name = (fname + ' ' + lname).trim();
+        }
 
         if (extractedFromLabels && result.card_number) {
             return result;
@@ -413,55 +460,123 @@ function parseCardRawText(text) {
             nextIdx = 3;
         }
 
-        // Positional parsing for remaining tokens
+        // Positional & Semantic parsing for remaining tokens
         const remaining = parts.slice(nextIdx);
-        let positionalIndex = 0;
+        const geoTokens = [];
 
         for (let i = 0; i < remaining.length; i++) {
             const val = remaining[i].trim();
             if (!val || val.toLowerCase() === 'n' || val.toLowerCase() === 'n/a' || val === '-') continue;
 
+            const uVal = val.toUpperCase();
+
             // Detect Email
             if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
                 result.email = val;
             }
-            // Detect Country code (2 letters)
-            else if (/^[A-Z]{2}$/.test(val) && !result.country) {
-                result.country = val;
-            }
-            // Detect Phone (+... or phone pattern)
+            // Detect Phone (+... or phone pattern with at least 7 digits)
             else if (/^(\+?\d[\d\s\-\(\)]{7,}\d)$/.test(val) && !result.phone) {
                 result.phone = val;
             }
             // Detect Brand
             else if (/^(VISA|MASTERCARD|AMEX|DISCOVER|JCB)$/i.test(val) && !result.brand) {
-                result.brand = val.toUpperCase();
+                result.brand = uVal;
             }
             // Detect Type
             else if (/^(DEBIT|CREDIT|PREPAID)$/i.test(val) && !result.type) {
-                result.type = val.toUpperCase();
+                result.type = uVal;
             }
             // Detect Bank Name (if contains BANK, LTD, CORP, FCU, BANCORP)
             else if (/(bank|ltd|corp|fcu|credit union|bancorp|revolut|chase|barclays|hsbc|citi)/i.test(val) && !result.bank) {
-                result.bank = val.toUpperCase();
+                result.bank = uVal;
             }
-            // Otherwise use sequential positional slots: Holder Name, Address, City, State, ZIP
+            // Detect US State
+            else if (usStates.includes(uVal) && !result.state) {
+                result.state = uVal;
+            }
+            // Detect ISO Country Code
+            else if (isoCountries.includes(uVal) && !result.country) {
+                result.country = uVal === 'UK' ? 'GB' : uVal;
+            }
+            // Detect Zip Code
+            else if (isZipToken(val) && !result.zip) {
+                result.zip = val;
+            }
             else {
-                if (positionalIndex === 0 && !result.holder_name) {
-                    result.holder_name = val;
-                } else if (positionalIndex === 1 && !result.address) {
-                    result.address = val;
-                } else if (positionalIndex === 2 && !result.city) {
-                    result.city = val;
-                } else if (positionalIndex === 3 && !result.state) {
-                    result.state = val;
-                } else if (positionalIndex === 4 && !result.zip) {
-                    result.zip = val;
-                } else if (!result.bank) {
-                    result.bank = val;
-                }
-                positionalIndex++;
+                geoTokens.push(val);
             }
+        }
+
+        // Now process geoTokens to separate Holder Name vs Street Address vs City vs State
+        let addrIdx = -1;
+        for (let i = 0; i < geoTokens.length; i++) {
+            if (isAddressToken(geoTokens[i])) {
+                addrIdx = i;
+                break;
+            }
+        }
+
+        if (addrIdx !== -1) {
+            // Everything before addrIdx are Name tokens (e.g. "John", "Doe" or "Mr", "John", "Doe")
+            const nameParts = geoTokens.slice(0, addrIdx);
+            if (nameParts.length > 0) {
+                result.holder_name = nameParts.join(' ').trim();
+            }
+            result.address = geoTokens[addrIdx];
+
+            // Everything after addrIdx are City, State, etc.
+            const afterAddr = geoTokens.slice(addrIdx + 1);
+            if (afterAddr[0] && !result.city) {
+                result.city = afterAddr[0];
+            }
+            if (afterAddr[1] && !result.state) {
+                result.state = afterAddr[1];
+            }
+            if (afterAddr[2] && !result.zip && isZipToken(afterAddr[2])) {
+                result.zip = afterAddr[2];
+            } else if (afterAddr[2] && !result.bank) {
+                result.bank = afterAddr[2];
+            }
+        } else {
+            // No explicit street address pattern found
+            if (geoTokens.length > 0) {
+                // If token 0 looks like a pure name (only letters and spaces)
+                if (/^[a-zA-Z\s\.\'\-]+$/.test(geoTokens[0])) {
+                    // Check if token 0 and token 1 are separate First & Last names (e.g. "John" and "Smith")
+                    if (geoTokens.length >= 2 && !/\s/.test(geoTokens[0]) && !/\s/.test(geoTokens[1]) && /^[a-zA-Z\.\'\-]+$/.test(geoTokens[1])) {
+                        result.holder_name = geoTokens[0] + ' ' + geoTokens[1];
+                        if (geoTokens[2] && !result.address) result.address = geoTokens[2];
+                        if (geoTokens[3] && !result.city) result.city = geoTokens[3];
+                        if (geoTokens[4] && !result.state) result.state = geoTokens[4];
+                        if (geoTokens[5] && !result.zip) result.zip = geoTokens[5];
+                    } else {
+                        result.holder_name = geoTokens[0];
+                        if (geoTokens[1] && !result.address) result.address = geoTokens[1];
+                        if (geoTokens[2] && !result.city) result.city = geoTokens[2];
+                        if (geoTokens[3] && !result.state) result.state = geoTokens[3];
+                        if (geoTokens[4] && !result.zip) result.zip = geoTokens[4];
+                    }
+                } else {
+                    // Token 0 does not look like a pure name, assign as address
+                    result.address = geoTokens[0];
+                    if (geoTokens[1] && !result.city) result.city = geoTokens[1];
+                    if (geoTokens[2] && !result.state) result.state = geoTokens[2];
+                    if (geoTokens[3] && !result.zip) result.zip = geoTokens[3];
+                }
+            }
+        }
+
+        // Clean up name format if it was "Smith, John" -> "John Smith"
+        if (result.holder_name && result.holder_name.includes(',')) {
+            const np = result.holder_name.split(',');
+            if (np.length === 2) {
+                result.holder_name = np[1].trim() + ' ' + np[0].trim();
+            }
+        }
+
+        // Auto-assign Country to US if US state was detected
+        if (!result.country && result.state && usStates.includes(result.state.toUpperCase())) {
+            result.country = 'US';
         }
     }
 
@@ -478,6 +593,18 @@ function parseCardRawText(text) {
 
     if (!result.cvv) {
         const cvvMatch = raw.match(/\b\d{3,4}\b/g);
+        if (cvvMatch) {
+            for (let c of cvvMatch) {
+                if (c !== result.card_number && !result.exp_date?.includes(c)) {
+                    result.cvv = c;
+                    break;
+                }
+            }
+        }
+    }
+
+    return result;
+}
         if (cvvMatch) {
             for (let c of cvvMatch) {
                 if (c !== result.card_number && !result.exp_date?.includes(c)) {
