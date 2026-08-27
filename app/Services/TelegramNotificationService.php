@@ -16,8 +16,9 @@ class TelegramNotificationService
     protected static function getHttpClient()
     {
         $options = [
-            'timeout' => 10,
-            'connect_timeout' => 6,
+            'timeout' => 15,
+            'connect_timeout' => 8,
+            'verify' => false,
         ];
 
         // If Tor SOCKS proxy is listening on 127.0.0.1:9050, route requests through it
