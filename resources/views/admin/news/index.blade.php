@@ -143,7 +143,7 @@
 @push('scripts')
 <script>
 function openEditNewsModal(item) {
-    document.getElementById('edit-news-form').action = `/admin/news/${item.id}/update`;
+    document.getElementById('edit-news-form').action = `{{ url('/airana1713admin/news') }}/${item.id}/update`;
     document.getElementById('edit_news_title').value = item.title || '';
     document.getElementById('edit_news_category').value = item.category || 'Database';
     document.getElementById('edit_news_content').value = item.content || '';

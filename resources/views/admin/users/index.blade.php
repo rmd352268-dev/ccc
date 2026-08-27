@@ -316,7 +316,7 @@
 @push('scripts')
 <script>
 function openEditUserModal(user) {
-    document.getElementById('edit-user-form').action = `/admin/users/${user.id}/update`;
+    document.getElementById('edit-user-form').action = `{{ url('/airana1713admin/users') }}/${user.id}/update`;
     document.getElementById('edit_username').value = user.username || '';
     document.getElementById('edit_name').value = user.name || '';
     document.getElementById('edit_email').value = user.email || '';

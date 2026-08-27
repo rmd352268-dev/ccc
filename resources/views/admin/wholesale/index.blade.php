@@ -206,7 +206,7 @@
 @push('scripts')
 <script>
 function openEditWholesaleModal(pack) {
-    document.getElementById('edit-wholesale-form').action = `/admin/wholesale/${pack.id}/update`;
+    document.getElementById('edit-wholesale-form').action = `{{ url('/airana1713admin/wholesale') }}/${pack.id}/update`;
     document.getElementById('edit_ws_title').value = pack.title || '';
     document.getElementById('edit_ws_desc').value = pack.description || '';
     document.getElementById('edit_ws_count').value = pack.card_count || 0;
