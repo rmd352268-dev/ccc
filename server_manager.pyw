@@ -251,7 +251,7 @@ class ServerControllerApp:
             cursor="hand2",
             padx=4,
             pady=4,
-            command=lambda: webbrowser.open("https://t.me/PayateSupport_Bot")
+            command=lambda: webbrowser.open("https://t.me/payate_desk_bot")
         )
         tg_support_btn.pack(side="right", fill="x", expand=True, padx=(2, 0))
 

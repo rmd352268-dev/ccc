@@ -45,7 +45,7 @@ echo ===================================================
 echo.
 echo Local Link: http://127.0.0.1:8000
 echo Telegram Admin Bot: @MypayteAdmin_Bot
-echo Telegram Support Bot: @PayateSupport_Bot
+echo Telegram Support Bot: @payate_desk_bot
 echo GitHub Sync: Auto-Sync Active (rmd352268-dev/ccc)
 echo.
 echo All services running in background.
