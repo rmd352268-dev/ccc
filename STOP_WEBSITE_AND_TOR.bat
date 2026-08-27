@@ -1,7 +1,19 @@
 @echo off
-title Stop Laravel and Tor
-echo Stopping PHP and Tor processes...
+title Payate CC - Stop All Services
+color 0c
+cls
+
+echo ====================================================================
+echo                   STOPPING ALL PAYATE SERVICES
+echo ====================================================================
+echo.
+echo Stopping Tor Daemon...
 taskkill /F /IM tor.exe /T 2>NUL
+echo Stopping PHP Web Server...
 taskkill /F /IM php.exe /T 2>NUL
-echo Successfully stopped!
+
+echo.
+echo All website and Tor processes have been stopped successfully.
+echo.
+echo ====================================================================
 pause
