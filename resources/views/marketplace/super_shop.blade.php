@@ -114,7 +114,11 @@
                             </div>
                         </td>
                         <td><span class="type-badge">{{ $card->type }}</span></td>
-                        <td style="color: var(--text-primary); font-weight: 600;">{{ $card->bank }}</td>
+                        <td style="color: #94A3B8; font-weight: 600; font-size: 12px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-shield-halved" style="font-size: 10px; color: var(--gold-bright);"></i> VIP Protected Bank
+                            </span>
+                        </td>
                         <td>
                             <div class="country-cell">
                                 <span class="country-flag">{{ $card->flag }}</span>

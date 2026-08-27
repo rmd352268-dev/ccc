@@ -827,8 +827,10 @@
                             <td style="font-family: monospace; font-weight: 700; color: var(--gold-primary);">
                                 {{ $card->bin }}******
                             </td>
-                            <td style="font-family: monospace; color: #CBD5E1;">
-                                {{ $card->exp_date ?? '12/28' }}
+                            <td style="font-family: monospace; color: #64748B;">
+                                <span title="Expiry Date is unlocked after purchase" style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="fa-solid fa-lock" style="font-size: 9px; color: var(--gold-primary);"></i> **/**
+                                </span>
                             </td>
                             <td>
                                 <span class="type-badge">{{ $card->type }}</span>
@@ -840,7 +842,15 @@
                             </td>
                             <td>{{ $card->state }}</td>
                             <td>{{ $card->city }}</td>
-                            <td style="font-family: monospace;">{{ $card->zip }}</td>
+                            <td style="font-family: monospace; color: #64748B;">
+                                @if(!empty($card->zip) || $card->has_zip)
+                                    <span title="ZIP Code is unlocked after purchase" style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
+                                        <i class="fa-solid fa-lock" style="font-size: 9px; color: var(--gold-primary);"></i> *****
+                                    </span>
+                                @else
+                                    <span style="color: var(--text-muted);">-</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 <span class="status-icon {{ $card->has_address ? 'status-yes' : 'status-no' }}">{{ $card->has_address ? '✓' : '✕' }}</span>
                             </td>
@@ -856,8 +866,10 @@
                             <td class="text-center">
                                 <span class="status-icon {{ $card->has_dob ? 'status-yes' : 'status-no' }}">{{ $card->has_dob ? '✓' : '✕' }}</span>
                             </td>
-                            <td style="color: var(--text-primary); font-size: 12px; font-weight: 600;">
-                                {{ $card->bank }}
+                            <td style="color: #94A3B8; font-size: 11.5px; font-weight: 600;">
+                                <span title="Bank details unlocked after purchase" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-shield-halved" style="font-size: 10px; color: var(--gold-primary);"></i> Protected Bank
+                                </span>
                             </td>
                             <td style="color: var(--text-muted); font-size: 11px; font-family: monospace; font-weight: 600;">
                                 {{ $card->base_name }}
