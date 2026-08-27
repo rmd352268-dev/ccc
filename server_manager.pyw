@@ -25,6 +25,7 @@ TOR_EXE = r"C:\Users\hp\tor_service\tor\tor.exe"
 TOR_RC = r"C:\Users\hp\tor_service\torrc"
 TOR_DIR = r"C:\Users\hp\tor_service"
 BOT_SCRIPT = os.path.join(PROJECT_DIR, "telegram_admin_bot.pyw")
+SUPPORT_BOT_SCRIPT = os.path.join(PROJECT_DIR, "telegram_support_bot.pyw")
 AUTO_GIT_SCRIPT = os.path.join(PROJECT_DIR, "auto_git_sync.py")
 ONION_URL = "http://7625n5aonepn2vui2qfpnj27kyv565eq7ztwpuowa4heemu2zvy5h5ad.onion"
 LOCAL_URL = "http://127.0.0.1:8000"
@@ -37,7 +38,7 @@ class ServerControllerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("⚡ Website & Bot Live Switcher")
-        self.root.geometry("400x640")
+        self.root.geometry("400x680")
         self.root.resizable(False, False)
         self.root.configure(bg="#0f172a")  # Dark Slate
 
@@ -45,6 +46,7 @@ class ServerControllerApp:
         self.tor_status = False
         self.php_status = False
         self.bot_status = False
+        self.support_bot_status = False
         self.always_on_top = tk.BooleanVar(value=True)
         self.autostart_var = tk.BooleanVar(value=os.path.exists(STARTUP_FILE))
 
