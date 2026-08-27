@@ -24,7 +24,7 @@
     </div>
 
     <!-- ==================================================== -->
-    <!-- ⚡ SMART AUTO-FILLER / QUICK PASTE SECTION           -->
+    <!-- SMART AUTO-FILLER / QUICK PASTE SECTION              -->
     <!-- ==================================================== -->
     <div class="filter-card" style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); border-radius: 12px; padding: 20px; margin-bottom: 24px; position: relative; overflow: hidden;">
         <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(to bottom, #F59E0B, #10B981);"></div>
@@ -58,8 +58,8 @@
                 <i class="fa-solid fa-circle-info" style="color: var(--gold-primary);"></i> Paste card details to quickly update form fields.
             </div>
 
-            <button type="button" onclick="executeAutoFill()" class="btn-search" style="padding: 6px 16px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ Auto-Fill Fields
+            <button type="button" onclick="executeAutoFill()" class="btn-search" style="padding: 6px 16px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none; cursor: pointer;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Fields
             </button>
         </div>
     </div>
@@ -243,7 +243,7 @@ function syncCountryFromSelect(select) {
 }
 
 function setCountryByCodeOrName(val) {
-    if (!val) return;
+    if (!val) return false;
     const select = document.getElementById('country_select');
     const cleanVal = val.trim().toUpperCase();
     
@@ -272,7 +272,7 @@ function detectBrandFromNumber(num) {
 }
 
 function onCardNumberChange(val) {
-    const clean = val.replace(/\D/g, '');
+    const clean = (val || '').replace(/\D/g, '');
     const binBadge = document.getElementById('detected_bin_badge');
     const binText = document.getElementById('bin_text');
     
