@@ -151,6 +151,10 @@
                     <i class="fa-solid fa-moon theme-toggle-icon"></i><span id="theme-label" data-i18n="night_mode"> Ночь</span>
                 </button>
 
+                <button type="button" class="cart-header-btn" onclick="showAnnouncementModal()" title="Official Announcement & Domains" style="background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4); color: var(--gold-primary);">
+                    <i class="fa-solid fa-bullhorn"></i> <span style="font-weight: 800;">Notice</span>
+                </button>
+
                 <a href="{{ route('profile.index') }}" class="cart-header-btn" title="My Profile & Account Settings">
                     <i class="fa-solid fa-user-gear"></i> <span data-i18n="profile">Профиль</span>
                 </a>
@@ -229,6 +233,9 @@
         <span>Live Support</span>
         <span style="display: inline-block; width: 8px; height: 8px; background: #22C55E; border-radius: 50%; box-shadow: 0 0 8px #22C55E;"></span>
     </a>
+
+    <!-- 📢 Official Public Announcement Modal -->
+    @include('partials.announcement_modal')
 
     <!-- Toast Notifications Placeholder -->
     <div id="toast-container" class="toast-container"></div>
