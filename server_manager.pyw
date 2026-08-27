@@ -320,13 +320,14 @@ class ServerControllerApp:
 WshShell.Run "cmd /c tasklist /FI ""IMAGENAME eq tor.exe"" | find /I ""tor.exe"" || {TOR_EXE} -f {TOR_RC}", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && tasklist /FI ""IMAGENAME eq php.exe"" | find /I ""php.exe"" || ""{php_path}"" -S 127.0.0.1:8000 -t public", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" telegram_admin_bot.pyw", 0, False
+WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" telegram_support_bot.pyw", 0, False
 WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py", 0, False
 '''
             try:
                 os.makedirs(os.path.dirname(STARTUP_FILE), exist_ok=True)
                 with open(STARTUP_FILE, "w", encoding="utf-8") as f:
                     f.write(vbs_content)
-                self.show_alert("Auto-start enabled! Server & Bot will run on PC boot.", "#4ade80")
+                self.show_alert("Auto-start enabled! Server & Bots will run on PC boot.", "#4ade80")
             except Exception as e:
                 self.show_alert(f"Failed to enable: {e}", "#f87171")
         else:
@@ -368,24 +369,38 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
         except Exception:
             return False
 
+    def is_support_bot_running(self):
+        try:
+            import ctypes
+            SYNCHRONIZE = 0x00100000
+            test_mutex = ctypes.windll.kernel32.OpenMutexW(SYNCHRONIZE, False, "Global\\PayateSupportTelegramBotMutex")
+            if test_mutex:
+                ctypes.windll.kernel32.CloseHandle(test_mutex)
+                return True
+            return False
+        except Exception:
+            return False
+
     def monitor_services_loop(self):
         while self.monitor_active:
             php_ok = self.is_port_open("127.0.0.1", 8000)
             tor_ok = self.is_process_running("tor.exe")
             bot_ok = self.is_bot_running()
+            support_bot_ok = self.is_support_bot_running()
             self.php_status = php_ok
             self.tor_status = tor_ok
             self.bot_status = bot_ok
+            self.support_bot_status = support_bot_ok
 
-            self.root.after(0, self.update_ui_state, php_ok, tor_ok, bot_ok)
+            self.root.after(0, self.update_ui_state, php_ok, tor_ok, bot_ok, support_bot_ok)
             time.sleep(1.0)
 
-    def update_ui_state(self, php_ok, tor_ok, bot_ok):
+    def update_ui_state(self, php_ok, tor_ok, bot_ok, support_bot_ok):
         if php_ok and tor_ok:
             self.is_running = True
             self.badge_lbl.config(text="ONLINE", fg="#22c55e", bg="#064e3b")
             self.status_big_dot.config(text="●", fg="#22c55e")
-            self.status_text.config(text="WEBSITE & BOT ARE LIVE", fg="#4ade80")
+            self.status_text.config(text="WEBSITE & BOTS ARE LIVE", fg="#4ade80")
             self.power_btn.config(
                 text="🛑 TURN OFFLINE (Stop All Services)",
                 bg="#dc2626",
@@ -415,7 +430,7 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             self.status_big_dot.config(text="○", fg="#64748b")
             self.status_text.config(text="WEBSITE IS OFFLINE", fg="#94a3b8")
             self.power_btn.config(
-                text="▶ TURN ONLINE (Start Server & Bot)",
+                text="▶ TURN ONLINE (Start Server & Bots)",
                 bg="#16a34a",
                 activebackground="#15803d"
             )
@@ -424,9 +439,12 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
             self.tor_indicator.config(text="○", fg="#64748b")
             self.tor_val.config(text="Offline", fg="#64748b")
 
-        # Bot status indicator
+        # Bot status indicators
         self.bot_indicator.config(text="●" if bot_ok else "○", fg="#22c55e" if bot_ok else "#64748b")
         self.bot_val.config(text="Active & Monitoring" if bot_ok else "Offline", fg="#4ade80" if bot_ok else "#64748b")
+
+        self.support_bot_indicator.config(text="●" if support_bot_ok else "○", fg="#22c55e" if support_bot_ok else "#64748b")
+        self.support_bot_val.config(text="Active & Relaying" if support_bot_ok else "Offline", fg="#4ade80" if support_bot_ok else "#64748b")
 
     def toggle_server(self):
         if self.is_running:
@@ -463,8 +481,18 @@ WshShell.Run "cmd /c cd /d {PROJECT_DIR} && ""{PYTHONW_EXE}"" auto_git_sync.py",
                         cwd=PROJECT_DIR,
                         creationflags=0x08000000
                     )
+
+            # 4. Start Telegram Customer Support Bot
+            if not self.is_support_bot_running():
+                if os.path.exists(SUPPORT_BOT_SCRIPT):
+                    pyw_cmd = PYTHONW_EXE if os.path.exists(PYTHONW_EXE) else "pythonw.exe"
+                    self.support_bot_proc = subprocess.Popen(
+                        [pyw_cmd, SUPPORT_BOT_SCRIPT],
+                        cwd=PROJECT_DIR,
+                        creationflags=0x08000000
+                    )
             
-            self.root.after(0, lambda: self.show_alert("Starting Tor, Laravel, and Telegram Bot...", "#38bdf8"))
+            self.root.after(0, lambda: self.show_alert("Starting Tor, Laravel, and Telegram Bots...", "#38bdf8"))
         
         threading.Thread(target=_start, daemon=True).start()
 
