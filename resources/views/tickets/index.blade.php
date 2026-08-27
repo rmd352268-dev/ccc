@@ -14,7 +14,7 @@
     </div>
 
     <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="https://t.me/PayateSupport_Bot" target="_blank" class="btn-search" style="background: linear-gradient(135deg, #0284C7, #0369A1); border-color: #38BDF8; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="https://t.me/payate_desk_bot" target="_blank" class="btn-search" style="background: linear-gradient(135deg, #0284C7, #0369A1); border-color: #38BDF8; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
             <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> 24/7 Live Telegram Support
         </a>
         <a href="{{ route('tickets.create') }}" class="btn-search" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
@@ -41,8 +41,8 @@
             </p>
         </div>
     </div>
-    <a href="https://t.me/PayateSupport_Bot" target="_blank" style="background: #0284C7; hover: #0369A1; color: #FFF; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
-        <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Message @PayateSupport_Bot <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+    <a href="https://t.me/payate_desk_bot" target="_blank" style="background: #0284C7; hover: #0369A1; color: #FFF; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
+        <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Message @payate_desk_bot <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
     </a>
 </div>
 
