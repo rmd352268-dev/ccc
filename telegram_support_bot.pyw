@@ -165,8 +165,8 @@ def get_admin_reply_keyboard():
 def get_user_reply_keyboard():
     return {
         "keyboard": [
-            [{"text": "💬 Live Support / Help"}, {"text": "📋 My Ticket Status"}],
-            [{"text": "❓ FAQ & Guides"}, {"text": "🌐 Visit Website"}]
+            [{"text": "💬 Live Support / Help"}],
+            [{"text": "📋 My Ticket Status"}, {"text": "❓ FAQ & Guides"}]
         ],
         "resize_keyboard": True,
         "persistent": True
@@ -569,10 +569,6 @@ def process_message(msg):
 
     if text == "❓ FAQ & Guides":
         send_user_faq(chat_id)
-        return
-
-    if text == "🌐 Visit Website":
-        send_message(chat_id, f"🌐 <b>Official Website Links:</b>\n\n• Local Web: {CONFIG.get('website_url', 'http://127.0.0.1:8000')}\n• Tor Onion: {CONFIG.get('onion_url', '')}", reply_markup=get_user_reply_keyboard())
         return
 
     if text == "💬 Live Support / Help":
