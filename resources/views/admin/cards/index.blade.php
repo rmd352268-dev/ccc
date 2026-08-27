@@ -9,18 +9,18 @@
         <p style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">Manage all cards, edit records, add new stock, or clear sold records.</p>
     </div>
 
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <form action="{{ route('admin.cards.clearSold') }}" method="POST" onsubmit="return confirm('Clear all sold cards from database?');">
             @csrf
-            <button type="submit" class="btn-reset" style="color: #EF4444; border-color: rgba(239,68,68,0.3);">
-                <i class="fa-solid fa-trash-can"></i> Clear Sold Cards
+            <button type="submit" class="btn-reset" style="color: #EF4444; border-color: rgba(239,68,68,0.3); padding: 8px 14px; font-size: 12px;">
+                <i class="fa-solid fa-trash-can"></i> Clear Sold
             </button>
         </form>
-        <a href="{{ route('admin.cards.bulk') }}" class="btn-reset" style="text-decoration: none;">
-            <i class="fa-solid fa-file-import"></i> Bulk Import
-        </a>
-        <a href="{{ route('admin.cards.create') }}" class="btn-search" style="text-decoration: none;">
+        <a href="{{ route('admin.cards.create') }}" class="btn-reset" style="text-decoration: none; padding: 8px 14px; font-size: 12px;">
             <i class="fa-solid fa-plus"></i> Add Single Card
+        </a>
+        <a href="{{ route('admin.cards.bulk') }}" class="btn-search" style="text-decoration: none; padding: 8px 18px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none; box-shadow: 0 4px 14px rgba(245,158,11,0.35);">
+            <i class="fa-solid fa-layer-group"></i> ⚡ Bulk Add Cards (10-1000+)
         </a>
     </div>
 </div>

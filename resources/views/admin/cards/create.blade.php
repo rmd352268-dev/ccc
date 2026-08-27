@@ -19,13 +19,24 @@
             </p>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="{{ route('admin.cards.bulk') }}" class="btn-reset" style="padding: 7px 14px; font-size: 12px; text-decoration: none;">
-                <i class="fa-solid fa-file-import"></i> Bulk Upload
+            <a href="{{ route('admin.cards.bulk') }}" class="btn-search" style="padding: 7px 16px; font-size: 12.5px; font-weight: 800; text-decoration: none; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #000; border: none; box-shadow: 0 3px 10px rgba(245,158,11,0.35);">
+                <i class="fa-solid fa-layer-group"></i> ⚡ Bulk Add Cards (10-1000+)
             </a>
             <a href="{{ route('admin.cards.index') }}" class="btn-reset" style="padding: 7px 14px; font-size: 12px; text-decoration: none;">
                 <i class="fa-solid fa-list-check"></i> View Inventory
             </a>
         </div>
+    </div>
+
+    <!-- Quick Switch Notice -->
+    <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-primary);">
+            <i class="fa-solid fa-lightbulb" style="color: var(--gold-primary); font-size: 16px;"></i>
+            <span>Have <strong>10, 50, or 100+ cards</strong> to add at once? Use the <strong>Bulk Multi-Card Importer</strong>.</span>
+        </div>
+        <a href="{{ route('admin.cards.bulk') }}" style="font-size: 12px; font-weight: 800; color: var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            Open Bulk Importer <i class="fa-solid fa-arrow-right"></i>
+        </a>
     </div>
 
     <!-- ==================================================== -->
