@@ -1051,6 +1051,8 @@ def clear_all_users_action():
 def perform_emergency_wipe(mode="database"):
     try:
         stop_all_services()
+        
+        # 1. Wipe primary database tables
         conn = get_db()
         c = conn.cursor()
         
@@ -1068,6 +1070,23 @@ def perform_emergency_wipe(mode="database"):
         conn.commit()
         conn.close()
 
+        # 2. Wipe support bot database
+        support_db_file = os.path.join(PROJECT_DIR, "database", "support_bot.sqlite")
+        if os.path.exists(support_db_file):
+            try:
+                sconn = sqlite3.connect(support_db_file)
+                sc = sconn.cursor()
+                for stbl in ["support_users", "support_messages", "support_tickets", "support_replies"]:
+                    try:
+                        sc.execute(f"DELETE FROM {stbl}")
+                    except Exception:
+                        pass
+                sconn.commit()
+                sconn.close()
+            except Exception:
+                pass
+
+        # 3. Clean and vacuum primary database
         try:
             conn2 = sqlite3.connect(DB_PATH)
             conn2.execute("VACUUM")
@@ -1075,6 +1094,7 @@ def perform_emergency_wipe(mode="database"):
         except Exception:
             pass
 
+        # 4. Wipe logs
         log_dir = os.path.join(PROJECT_DIR, "storage", "logs")
         if os.path.exists(log_dir):
             for f in os.listdir(log_dir):
@@ -1084,6 +1104,17 @@ def perform_emergency_wipe(mode="database"):
                     except Exception:
                         pass
 
+        # 5. Wipe user sessions
+        session_dir = os.path.join(PROJECT_DIR, "storage", "framework", "sessions")
+        if os.path.exists(session_dir):
+            for sf in os.listdir(session_dir):
+                if sf != ".gitignore":
+                    try:
+                        os.remove(os.path.join(session_dir, sf))
+                    except Exception:
+                        pass
+
+        # 6. Mode: Full Nuke (Cards Vault & Wholesale)
         if mode == "full_nuke":
             try:
                 conn3 = sqlite3.connect(DB_PATH)
@@ -1095,7 +1126,7 @@ def perform_emergency_wipe(mode="database"):
             except Exception:
                 pass
 
-        return True, "All sensitive databases, customer accounts, orders, and logs have been securely WIPED."
+        return True, "All sensitive databases, customer accounts, orders, support chats, sessions, and logs have been securely WIPED."
     except Exception as e:
         return False, str(e)
 
