@@ -830,29 +830,110 @@ class AdminController extends Controller
         if (strlen($cvv) > 4) $cvv = substr($cvv, 0, 4);
         if (empty($cvv)) $cvv = '000';
 
-        $holderName = $parts[$nextIdx] ?? 'Customer';
-        $address = $parts[$nextIdx + 1] ?? 'Main St';
-        $city = $parts[$nextIdx + 2] ?? 'City';
-        $state = $parts[$nextIdx + 3] ?? 'ST';
-        $zip = $parts[$nextIdx + 4] ?? '10001';
+        $isoCountries = ['US','GB','UK','CA','AU','DE','FR','IT','ES','NL','BE','CH','SE','NO','DK','FI','RU','CN','JP','KR','IN','BD','PK','AE','SA','BR','MX','AR','CL','CO','ZA','NG','EG','TR','SG','MY','TH','ID','VN','PH','NZ','IE','AT','PL','PT','GR','CZ','RO','HU','UA','IL','QA','KW','HK','TW','KZ','UZ','AZ','GE','AM','BY','BG','HR','RS','SK','SI','LT','LV','EE','IS','LU','CY','MT','MA','KE','GH','CR','PA','DO','PR','EC','UY','VE'];
+        $usStates = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
+
         $phone = '';
         $email = '';
         $countryCode = $defaultCountryCode;
         $countryName = $defaultCountryName;
-        $emailPassword = null;
-        $userAgent = null;
+        $state = '';
+        $zip = '';
+        $bank = $defaultBank;
+        $holderName = '';
+        $address = '';
+        $city = '';
+
+        $geoTokens = [];
 
         for ($i = $nextIdx; $i < count($parts); $i++) {
-            $val = trim($parts[$i]);
-            if (empty($val) || $val === 'n' || $val === 'N/A') continue;
+            $val = trim($parts[$i], " \t\n\r\0\x0B\"'");
+            if (empty($val) || strtolower($val) === 'n' || strtolower($val) === 'n/a' || $val === '-') continue;
+
+            $uVal = strtoupper($val);
 
             if (filter_var($val, FILTER_VALIDATE_EMAIL)) {
                 $email = $val;
-            } elseif (strlen($val) === 2 && ctype_alpha($val) && strtoupper($val) === $val) {
-                $countryCode = strtoupper($val);
-            } elseif (preg_match('/^(\+?\d[\d\s\-\(\)]{7,}\d)$/', $val)) {
+            } elseif (preg_match('/^(\+?\d[\d\s\-\(\)]{7,}\d)$/', $val) && empty($phone)) {
                 $phone = $val;
+            } elseif (preg_match('/^(VISA|MASTERCARD|AMEX|DISCOVER|JCB)$/i', $val)) {
+                $brand = $uVal;
+            } elseif (preg_match('/^(DEBIT|CREDIT|PREPAID)$/i', $val)) {
+                $defaultType = $uVal;
+            } elseif (preg_match('/^(bank|ltd|corp|fcu|credit union|bancorp|revolut|chase|barclays|hsbc|citi)/i', $val) && $bank === $defaultBank) {
+                $bank = $uVal;
+            } elseif (in_array($uVal, $usStates) && empty($state)) {
+                $state = $uVal;
+            } elseif (in_array($uVal, $isoCountries) && $countryCode === $defaultCountryCode) {
+                $countryCode = $uVal === 'UK' ? 'GB' : $uVal;
+                $countryName = CountryHelper::getCountryName($countryCode);
+            } elseif ((preg_match('/^\d{5}(-\d{4})?$/', $val) || preg_match('/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i', $val) || preg_match('/^\d{4,6}$/', $val)) && empty($zip)) {
+                $zip = $val;
+            } else {
+                $geoTokens[] = $val;
             }
+        }
+
+        // Find address index in geoTokens
+        $addrIdx = -1;
+        for ($i = 0; $i < count($geoTokens); $i++) {
+            $g = $geoTokens[$i];
+            if (
+                preg_match('/^\d+[A-Za-z0-9\-\/]*\s+[A-Za-z]/', $g) || 
+                preg_match('/\b(street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr|way|court|ct|square|sq|place|pl|terrace|ter|highway|hwy|building|bldg|apartment|apt|suite|ste|unit|floor|fl|box|p\.?o\.?\s*box|house|flat|rue|via|calle|strasse|str|weg|platz|straat)\b/i', $g) ||
+                (preg_match('/\d/', $g) && preg_match('/[a-zA-Z]/', $g) && preg_match('/\s/', $g))
+            ) {
+                $addrIdx = $i;
+                break;
+            }
+        }
+
+        if ($addrIdx !== -1) {
+            $nameParts = array_slice($geoTokens, 0, $addrIdx);
+            if (!empty($nameParts)) {
+                $holderName = trim(implode(' ', $nameParts));
+            }
+            $address = $geoTokens[$addrIdx];
+
+            $afterAddr = array_slice($geoTokens, $addrIdx + 1);
+            if (isset($afterAddr[0]) && empty($city)) $city = $afterAddr[0];
+            if (isset($afterAddr[1]) && empty($state)) $state = $afterAddr[1];
+            if (isset($afterAddr[2]) && empty($zip)) $zip = $afterAddr[2];
+        } else {
+            if (!empty($geoTokens)) {
+                if (preg_match('/^[a-zA-Z\s\.\'\-]+$/', $geoTokens[0])) {
+                    if (count($geoTokens) >= 2 && !preg_match('/\s/', $geoTokens[0]) && !preg_match('/\s/', $geoTokens[1]) && preg_match('/^[a-zA-Z\.\'\-]+$/', $geoTokens[1])) {
+                        $holderName = $geoTokens[0] . ' ' . $geoTokens[1];
+                        if (isset($geoTokens[2])) $address = $geoTokens[2];
+                        if (isset($geoTokens[3])) $city = $geoTokens[3];
+                        if (isset($geoTokens[4]) && empty($state)) $state = $geoTokens[4];
+                        if (isset($geoTokens[5]) && empty($zip)) $zip = $geoTokens[5];
+                    } else {
+                        $holderName = $geoTokens[0];
+                        if (isset($geoTokens[1])) $address = $geoTokens[1];
+                        if (isset($geoTokens[2])) $city = $geoTokens[2];
+                        if (isset($geoTokens[3]) && empty($state)) $state = $geoTokens[3];
+                        if (isset($geoTokens[4]) && empty($zip)) $zip = $geoTokens[4];
+                    }
+                } else {
+                    $address = $geoTokens[0];
+                    if (isset($geoTokens[1])) $city = $geoTokens[1];
+                    if (isset($geoTokens[2]) && empty($state)) $state = $geoTokens[2];
+                    if (isset($geoTokens[3]) && empty($zip)) $zip = $geoTokens[3];
+                }
+            }
+        }
+
+        if (!empty($holderName) && strpos($holderName, ',') !== false) {
+            $np = explode(',', $holderName);
+            if (count($np) === 2) {
+                $holderName = trim($np[1]) . ' ' . trim($np[0]);
+            }
+        }
+
+        if ($countryCode === $defaultCountryCode && !empty($state) && in_array(strtoupper($state), $usStates)) {
+            $countryCode = 'US';
+            $countryName = 'United States';
         }
 
         return [
@@ -862,28 +943,24 @@ class AdminController extends Controller
             'card_number' => $cardNum,
             'exp_date' => $expDate,
             'cvv' => $cvv,
-            'holder_name' => ($holderName === 'n' || empty($holderName)) ? 'Customer' : $holderName,
-            'address' => ($address === 'n' || empty($address)) ? 'Main St' : $address,
-            'city' => ($city === 'n' || empty($city)) ? 'City' : $city,
-            'state' => ($state === 'n' || empty($state)) ? 'ST' : $state,
-            'zip' => ($zip === 'n' || empty($zip)) ? '10001' : $zip,
+            'holder_name' => $holderName ?: null,
+            'address' => $address ?: null,
+            'city' => $city ?: null,
+            'state' => $state ?: null,
+            'zip' => $zip ?: null,
             'country_code' => $countryCode,
             'country_name' => $countryName,
-            'bank' => $defaultBank,
+            'bank' => $bank,
             'base_name' => $defaultBase,
             'price_c' => $defaultPriceC,
             'price_unc' => $defaultPriceUnc,
-            'phone' => $phone,
-            'email' => $email,
-            'email_password' => $emailPassword,
-            'user_agent' => $userAgent,
-            'has_name' => !empty($holderName) && $holderName !== 'Customer' && $holderName !== 'n',
-            'has_address' => !empty($address) && $address !== 'Main St' && $address !== 'n',
-            'has_zip' => !empty($zip) && $zip !== 'n',
+            'phone' => $phone ?: null,
+            'email' => $email ?: null,
+            'has_name' => !empty($holderName),
+            'has_address' => !empty($address),
+            'has_zip' => !empty($zip),
             'has_phone' => !empty($phone),
             'has_mail' => !empty($email),
-            'has_email_password' => !empty($emailPassword),
-            'has_user_agent' => !empty($userAgent),
             'status' => 'available',
         ];
     }
