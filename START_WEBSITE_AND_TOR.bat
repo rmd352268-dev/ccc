@@ -6,7 +6,7 @@ echo     STARTING LARAVEL, TOR, BOT & AUTO GIT SYNC
 echo ===================================================
 echo.
 
-echo [1/4] Checking Tor Daemon...
+echo [1/5] Checking Tor Daemon...
 tasklist /FI "IMAGENAME eq tor.exe" 2>NUL | find /I /N "tor.exe">NUL
 if "%ERRORLEVEL%"=="0" (
     echo Tor Daemon is already running.
