@@ -86,6 +86,10 @@
                 <i class="fa-solid fa-credit-card"></i> Cards Inventory & Edit
             </a>
 
+            <a href="{{ route('admin.cards.bulk') }}" class="admin-nav-link {{ request()->routeIs('admin.cards.bulk') ? 'active' : '' }}">
+                <i class="fa-solid fa-layer-group" style="color: var(--gold-primary);"></i> Bulk Add Cards (10-1000+)
+            </a>
+
             <a href="{{ route('admin.wholesale.index') }}" class="admin-nav-link {{ request()->routeIs('admin.wholesale.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-box-archive"></i> Wholesale Bundles
             </a>
