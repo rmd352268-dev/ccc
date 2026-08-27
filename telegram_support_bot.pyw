@@ -563,6 +563,23 @@ def process_callback_query(cb):
         send_message(ADMIN_CHAT_ID, f"🚫 <b>User <code>{target_uid}</code> has been banned from support.</b>")
         return
 
+    if data.startswith("support_history:"):
+        target_uid = int(data.split(":")[1])
+        u = get_user_info(target_uid)
+        history = support_bridge.get_user_history(target_uid, limit=10)
+        name = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else "Customer"
+        uname = f"@{u['username']}" if u and u['username'] else "No username"
+        h_text = f"📜 <b>CHAT HISTORY FOR {name} ({uname})</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        if not history:
+            h_text += "<i>No messages recorded yet.</i>\n"
+        else:
+            for h in history:
+                sender = "👑 <b>Admin:</b>" if h["sender_type"] == "admin" else f"👤 <b>{name}:</b>"
+                h_text += f"{sender} {h['message_text']}\n<i>({h['created_at']} UTC)</i>\n\n"
+        answer_callback(cb_id)
+        send_message(ADMIN_CHAT_ID, h_text)
+        return
+
     if data.startswith("support_close:"):
         target_uid = int(data.split(":")[1])
         send_message(target_uid, "🔒 <b>Support Ticket Resolved</b>\n\nYour inquiry has been marked as resolved by our team. If you need any more assistance, feel free to send a new message anytime!")
