@@ -124,6 +124,21 @@ def init_support_db():
             created_at TEXT
         )
     """)
+    
+    # Check columns in message_mappings and auto-upgrade if schema was created with older format
+    try:
+        c.execute("PRAGMA table_info(message_mappings)")
+        cols = [col[1] for col in c.fetchall()]
+        if "admin_bot_msg_id" not in cols:
+            if "admin_msg_id" in cols:
+                c.execute("ALTER TABLE message_mappings RENAME COLUMN admin_msg_id TO admin_bot_msg_id")
+            else:
+                c.execute("ALTER TABLE message_mappings ADD COLUMN admin_bot_msg_id INTEGER")
+        if "support_bot_msg_id" not in cols:
+            c.execute("ALTER TABLE message_mappings ADD COLUMN support_bot_msg_id INTEGER")
+    except Exception:
+        pass
+
     c.execute("""
         CREATE TABLE IF NOT EXISTS support_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
