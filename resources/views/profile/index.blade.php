@@ -60,7 +60,7 @@
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: var(--text-muted);">Country:</span>
-                        <strong style="color: var(--text-primary);">{{ $profile['country'] ?? 'Bangladesh' }}</strong>
+                        <strong style="color: var(--text-primary);">{{ $profile['country'] ?? 'United States (US)' }}</strong>
                     </div>
                 </div>
             </div>
@@ -112,37 +112,37 @@
                         
                         <div class="form-group">
                             <label class="form-label" for="username">Username (@username)</label>
-                            <input type="text" name="username" id="username" class="form-control" value="{{ old('username', $profile['username'] ?? 'asadulislam17p') }}" placeholder="Your unique username" required style="border-color: var(--gold-primary); font-weight: 700;">
+                            <input type="text" name="username" id="username" class="form-control" value="{{ old('username', $profile['username'] ?? '') }}" placeholder="Your unique username" required style="border-color: var(--gold-primary); font-weight: 700;">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="full_name">Full Name</label>
-                            <input type="text" name="full_name" id="full_name" class="form-control" value="{{ old('full_name', $profile['full_name'] ?? 'Asadul Islam') }}" placeholder="Your Full Name" required>
+                            <input type="text" name="full_name" id="full_name" class="form-control" value="{{ old('full_name', $profile['full_name'] ?? '') }}" placeholder="Your Full Name" required>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="email">Email Address</label>
-                            <input type="email" name="email" id="email" class="form-control" value="{{ old('email', $profile['email'] ?? 'asadul@example.com') }}" placeholder="email@domain.com" required>
+                            <input type="email" name="email" id="email" class="form-control" value="{{ old('email', $profile['email'] ?? '') }}" placeholder="email@domain.com" required>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="phone">Phone Number / WhatsApp</label>
-                            <input type="text" name="phone" id="phone" class="form-control" value="{{ old('phone', $profile['phone'] ?? '+880 1700-000000') }}" placeholder="+880 1700-000000">
+                            <input type="text" name="phone" id="phone" class="form-control" value="{{ old('phone', $profile['phone'] ?? '') }}" placeholder="+1 212-555-0199">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="telegram">Telegram Handle</label>
-                            <input type="text" name="telegram" id="telegram" class="form-control" value="{{ old('telegram', $profile['telegram'] ?? '@asadul_buyer') }}" placeholder="@username">
+                            <input type="text" name="telegram" id="telegram" class="form-control" value="{{ old('telegram', $profile['telegram'] ?? '') }}" placeholder="@username">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="jabber">Jabber / XMPP / Discord</label>
-                            <input type="text" name="jabber" id="jabber" class="form-control" value="{{ old('jabber', $profile['jabber'] ?? 'asadul@xmpp.is') }}" placeholder="user@jabber.org">
+                            <input type="text" name="jabber" id="jabber" class="form-control" value="{{ old('jabber', $profile['jabber'] ?? '') }}" placeholder="user@jabber.org">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="country">Country / Region</label>
-                            <input type="text" name="country" id="country" class="form-control" value="{{ old('country', $profile['country'] ?? 'Bangladesh (BD)') }}" placeholder="Country">
+                            <input type="text" name="country" id="country" class="form-control" value="{{ old('country', $profile['country'] ?? 'United States (US)') }}" placeholder="Country">
                         </div>
 
                         <div class="form-group">
@@ -150,8 +150,9 @@
                             <select name="timezone" id="timezone" class="form-select">
                                 <option value="America/Los_Angeles" {{ ($profile['timezone'] ?? '') == 'America/Los_Angeles' ? 'selected' : '' }}>Pacific Time (PST/PDT)</option>
                                 <option value="UTC" {{ ($profile['timezone'] ?? '') == 'UTC' ? 'selected' : '' }}>Universal Time (UTC)</option>
-                                <option value="Asia/Dhaka" {{ ($profile['timezone'] ?? '') == 'Asia/Dhaka' ? 'selected' : '' }}>Bangladesh Standard Time (BST / UTC+6)</option>
+                                <option value="America/New_York" {{ ($profile['timezone'] ?? '') == 'America/New_York' ? 'selected' : '' }}>Eastern Time (EST/EDT)</option>
                                 <option value="Europe/London" {{ ($profile['timezone'] ?? '') == 'Europe/London' ? 'selected' : '' }}>London (GMT/BST)</option>
+                                <option value="Europe/Berlin" {{ ($profile['timezone'] ?? '') == 'Europe/Berlin' ? 'selected' : '' }}>Central Europe (CET)</option>
                             </select>
                         </div>
                     </div>
