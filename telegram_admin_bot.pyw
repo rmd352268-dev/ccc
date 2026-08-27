@@ -1340,24 +1340,28 @@ def get_main_menu_keyboard():
     return {
         "inline_keyboard": [
             [
-                {"text": "📊 Live Server Status", "callback_data": "cmd:status"},
-                {"text": "💰 Deposits Hub", "callback_data": "cmd:pending_deposits"}
+                {"text": "🛡️ Server Health & Security", "callback_data": "cmd:health_check"},
+                {"text": "📊 Live Server Status", "callback_data": "cmd:status"}
             ],
             [
-                {"text": "👥 User Management", "callback_data": "cmd:users_hub:1"},
-                {"text": "💳 Cards Vault & Import", "callback_data": "cmd:cards_hub"}
+                {"text": "💰 Deposits Hub", "callback_data": "cmd:pending_deposits"},
+                {"text": "👥 User Management", "callback_data": "cmd:users_hub:1"}
             ],
             [
-                {"text": "💬 Live Support & Tickets", "callback_data": "cmd:support_live_hub"},
-                {"text": "📦 Wholesale Packs", "callback_data": "cmd:wholesale_hub"}
+                {"text": "💳 Cards Vault & Import", "callback_data": "cmd:cards_hub"},
+                {"text": "💬 Live Support & Tickets", "callback_data": "cmd:support_live_hub"}
             ],
             [
-                {"text": "📢 News & Announcements", "callback_data": "cmd:news_hub"},
-                {"text": "⚙️ Crypto & Rates", "callback_data": "cmd:wallets_hub"}
+                {"text": "📦 Wholesale Packs", "callback_data": "cmd:wholesale_hub"},
+                {"text": "📢 News & Announcements", "callback_data": "cmd:news_hub"}
             ],
             [
-                {"text": "📋 Orders & Sales Audit", "callback_data": "cmd:orders_hub:1"},
-                {"text": "🧅 Onion Domain", "callback_data": "cmd:domain"}
+                {"text": "⚙️ Crypto & Rates", "callback_data": "cmd:wallets_hub"},
+                {"text": "📋 Orders & Sales Audit", "callback_data": "cmd:orders_hub:1"}
+            ],
+            [
+                {"text": "🧅 Onion Domain", "callback_data": "cmd:domain"},
+                {"text": "🔄 GitHub Cloud Backup", "callback_data": "cmd:git_hub"}
             ],
             [
                 {"text": "🚀 Start", "callback_data": "cmd:start_server"},
@@ -1365,7 +1369,6 @@ def get_main_menu_keyboard():
                 {"text": "🔄 Restart Server", "callback_data": "cmd:restart_server"}
             ],
             [
-                {"text": "🔄 GitHub Auto-Sync & Backup", "callback_data": "cmd:git_hub"},
                 {"text": "⚠️ Emergency Wipe", "callback_data": "cmd:emergency_prompt"}
             ]
         ]
@@ -2258,6 +2261,10 @@ def process_message(msg):
         # Also send interactive inline menu
         send_admin_msg("⚡ <b>[INTERACTIVE CONTROL DESK]</b>", get_main_menu_keyboard())
 
+    elif text in ["/health", "/health_check", "/security", "/audit", "🛡️ Server Health", "🛡️ Server Health & Security", "Health", "Server Health", "হেলথ চেক", "সার্ভার হেলথ"]:
+        t, k = build_server_health_view()
+        send_admin_msg(t, k)
+
     elif text in ["/status", "📊 Live Status", "📊 Live Server Status", "Status"]:
         t, k = build_status_view()
         send_admin_msg(t, k)
@@ -2664,6 +2671,20 @@ def process_callback_query(cq):
     if data == "cmd:main_menu":
         ADMIN_STATE.pop(str(chat_id), None)
         edit_admin_msg(chat_id, message_id, get_main_menu_text(), get_main_menu_keyboard())
+
+    elif data == "cmd:health_check":
+        t, k = build_server_health_view()
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data == "cmd:attack_logs":
+        t, k = build_attack_logs_view()
+        edit_admin_msg(chat_id, message_id, t, k)
+
+    elif data == "action:flush_logs":
+        ok, res_str = flush_laravel_logs_action()
+        answer_callback(cq_id, res_str, show_alert=True)
+        t, k = build_server_health_view()
+        edit_admin_msg(chat_id, message_id, t, k)
 
     elif data == "cmd:status":
         t, k = build_status_view()
