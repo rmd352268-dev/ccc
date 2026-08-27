@@ -251,6 +251,68 @@ def show_recent_users(chat_id, limit=15):
     text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>Use <code>/reply &lt;id&gt; &lt;text&gt;</code> to respond.</i>"
     send_message(chat_id, text)
 
+def show_banned_users(chat_id):
+    conn = support_bridge.get_db()
+    c = conn.cursor()
+    c.execute("SELECT telegram_id, first_name, last_name, username, last_seen FROM support_users WHERE is_banned = 1")
+    banned_list = c.fetchall()
+    conn.close()
+    if not banned_list:
+        send_message(chat_id, "ℹ️ <b>No banned users currently.</b> All registered customers have active access.")
+        return
+
+    b_text = "🚫 <b>BANNED SUPPORT CUSTOMERS LIST:</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    buttons = []
+    for b in banned_list:
+        uname = f"@{b['username']}" if b['username'] else "No handle"
+        name = f"{b['first_name'] or ''} {b['last_name'] or ''}".strip() or "Customer"
+        b_text += f"• <code>{b['telegram_id']}</code> — <b>{name}</b> ({uname})\n  Last seen: <i>{b['last_seen']}</i>\n\n"
+        buttons.append([
+            {"text": f"🟢 Unban {name}", "callback_data": f"support_unban:{b['telegram_id']}"},
+            {"text": "📜 History", "callback_data": f"support_history:{b['telegram_id']}"}
+        ])
+    b_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>Tap <b>🟢 Unban</b> below or type <code>/unban &lt;id&gt;</code></i>"
+    send_message(chat_id, b_text, reply_markup={"inline_keyboard": buttons})
+
+def show_user_info(chat_id, user_id):
+    user = get_user_info(user_id)
+    if not user:
+        send_message(chat_id, f"❌ User with ID <code>{user_id}</code> not found in support database.")
+        return
+    
+    name = f"{user['first_name'] or ''} {user['last_name'] or ''}".strip() or "Customer"
+    uname = f"@{user['username']}" if user['username'] else "No username"
+    st_icon = "🚫 BANNED" if user['is_banned'] else "🟢 ACTIVE"
+    
+    text = (
+        "👤 <b>[CUSTOMER SUPPORT PROFILE]</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📛 <b>Name:</b> <b>{name}</b>\n"
+        f"🏷️ <b>Username:</b> {uname}\n"
+        f"🆔 <b>Telegram ID:</b> <code>{user['telegram_id']}</code>\n"
+        f"🚦 <b>Account Status:</b> <code>{st_icon}</code>\n"
+        f"💬 <b>Total Inquiries:</b> <code>{user['total_messages']}</code>\n"
+        f"📅 <b>First Seen:</b> <i>{user['first_seen']}</i>\n"
+        f"🕒 <b>Last Seen:</b> <i>{user['last_seen']}</i>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    ban_btn = {"text": "🟢 Unban User", "callback_data": f"support_unban:{user['telegram_id']}"} if user['is_banned'] else {"text": "🚫 Ban User", "callback_data": f"support_ban:{user['telegram_id']}"}
+    
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "↩️ Reply to User", "callback_data": f"support_reply:{user['telegram_id']}"},
+                ban_btn
+            ],
+            [
+                {"text": "📜 User Chat History", "callback_data": f"support_history:{user['telegram_id']}"},
+                {"text": "🔒 Resolve Ticket", "callback_data": f"support_close:{user['telegram_id']}"}
+            ]
+        ]
+    }
+    send_message(chat_id, text, reply_markup=keyboard)
+
 # ----------------------------------------------------------------------
 # CUSTOMER / USER PORTAL (NON-ADMIN)
 # ----------------------------------------------------------------------
@@ -362,21 +424,8 @@ def process_message(msg):
             show_recent_users(chat_id)
             return
 
-        if text in ["/banned", "🚫 Banned Users"]:
-            conn = support_bridge.get_db()
-            c = conn.cursor()
-            c.execute("SELECT telegram_id, first_name, last_name, username, last_seen FROM support_users WHERE is_banned = 1")
-            banned_list = c.fetchall()
-            conn.close()
-            if not banned_list:
-                send_message(chat_id, "ℹ️ No banned users currently.")
-            else:
-                b_text = "🚫 <b>BANNED SUPPORT USERS:</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                for b in banned_list:
-                    uname = f"@{b['username']}" if b['username'] else "No handle"
-                    b_text += f"• <code>{b['telegram_id']}</code> — {b['first_name'] or 'Customer'} ({uname})\n"
-                b_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>Use <code>/unban &lt;id&gt;</code> to unban.</i>"
-                send_message(chat_id, b_text)
+        if text in ["/banned", "🚫 Banned Users", "🚫 Banned List"]:
+            show_banned_users(chat_id)
             return
 
         if text in ["/broadcast", "📢 Broadcast"]:
@@ -408,6 +457,17 @@ def process_message(msg):
                     send_message(chat_id, "❌ Invalid User ID.")
                 return
 
+            if cmd == "/info":
+                if len(parts) < 2:
+                    send_message(chat_id, "❌ Usage: <code>/info &lt;user_id&gt;</code>")
+                    return
+                try:
+                    target_id = int(parts[1])
+                    show_user_info(chat_id, target_id)
+                except ValueError:
+                    send_message(chat_id, "❌ Invalid User ID.")
+                return
+
             if cmd == "/ban":
                 if len(parts) < 2:
                     send_message(chat_id, "❌ Usage: <code>/ban &lt;user_id&gt;</code>")
@@ -415,7 +475,15 @@ def process_message(msg):
                 try:
                     target_id = int(parts[1])
                     set_user_ban_status(target_id, banned=True)
-                    send_message(chat_id, f"🚫 <b>User <code>{target_id}</code> has been BANNED from support.</b>")
+                    unban_btn = {
+                        "inline_keyboard": [
+                            [
+                                {"text": "🟢 Unban User", "callback_data": f"support_unban:{target_id}"},
+                                {"text": "📜 User History", "callback_data": f"support_history:{target_id}"}
+                            ]
+                        ]
+                    }
+                    send_message(chat_id, f"🚫 <b>User <code>{target_id}</code> has been BANNED from support.</b>", reply_markup=unban_btn)
                 except ValueError:
                     send_message(chat_id, "❌ Invalid User ID.")
                 return
@@ -427,7 +495,15 @@ def process_message(msg):
                 try:
                     target_id = int(parts[1])
                     set_user_ban_status(target_id, banned=False)
-                    send_message(chat_id, f"🟢 <b>User <code>{target_id}</code> has been UNBANNED.</b>")
+                    ban_btn = {
+                        "inline_keyboard": [
+                            [
+                                {"text": "↩️ Reply to User", "callback_data": f"support_reply:{target_id}"},
+                                {"text": "🚫 Ban User", "callback_data": f"support_ban:{target_id}"}
+                            ]
+                        ]
+                    }
+                    send_message(chat_id, f"🟢 <b>User <code>{target_id}</code> has been UNBANNED and can send messages again.</b>", reply_markup=ban_btn)
                 except ValueError:
                     send_message(chat_id, "❌ Invalid User ID.")
                 return
@@ -542,19 +618,7 @@ def process_callback_query(cb):
 
     if data == "admin:banned":
         answer_callback(cb_id)
-        conn = support_bridge.get_db()
-        c = conn.cursor()
-        c.execute("SELECT telegram_id, first_name, last_name, username FROM support_users WHERE is_banned = 1")
-        banned_list = c.fetchall()
-        conn.close()
-        if not banned_list:
-            send_message(ADMIN_CHAT_ID, "ℹ️ No banned users currently.")
-        else:
-            b_text = "🚫 <b>BANNED SUPPORT USERS:</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            for b in banned_list:
-                uname = f"@{b['username']}" if b['username'] else "No handle"
-                b_text += f"• <code>{b['telegram_id']}</code> — {b['first_name'] or 'Customer'} ({uname})\n"
-            send_message(ADMIN_CHAT_ID, b_text)
+        show_banned_users(ADMIN_CHAT_ID)
         return
 
     if data == "admin:broadcast_prompt":
@@ -582,7 +646,36 @@ def process_callback_query(cb):
         target_uid = int(data.split(":")[1])
         set_user_ban_status(target_uid, banned=True)
         answer_callback(cb_id, f"User {target_uid} banned!", show_alert=True)
-        send_message(ADMIN_CHAT_ID, f"🚫 <b>User <code>{target_uid}</code> has been banned from support.</b>")
+        unban_btn = {
+            "inline_keyboard": [
+                [
+                    {"text": "🟢 Unban User", "callback_data": f"support_unban:{target_uid}"},
+                    {"text": "📜 User History", "callback_data": f"support_history:{target_uid}"}
+                ]
+            ]
+        }
+        send_message(ADMIN_CHAT_ID, f"🚫 <b>User <code>{target_uid}</code> has been BANNED from support.</b>", reply_markup=unban_btn)
+        return
+
+    if data.startswith("support_unban:"):
+        target_uid = int(data.split(":")[1])
+        set_user_ban_status(target_uid, banned=False)
+        answer_callback(cb_id, f"User {target_uid} unbanned!", show_alert=True)
+        ban_btn = {
+            "inline_keyboard": [
+                [
+                    {"text": "↩️ Reply to User", "callback_data": f"support_reply:{target_uid}"},
+                    {"text": "🚫 Ban User", "callback_data": f"support_ban:{target_uid}"}
+                ]
+            ]
+        }
+        send_message(ADMIN_CHAT_ID, f"🟢 <b>User <code>{target_uid}</code> has been UNBANNED and can now message support again.</b>", reply_markup=ban_btn)
+        return
+
+    if data.startswith("support_info:"):
+        target_uid = int(data.split(":")[1])
+        answer_callback(cb_id)
+        show_user_info(ADMIN_CHAT_ID, target_uid)
         return
 
     if data.startswith("support_history:"):
