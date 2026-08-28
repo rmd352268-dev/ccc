@@ -1,6 +1,7 @@
 *.log
 .DS_Store
 .env
+.env.*
 .env.backup
 .env.production
 .phpactor.json
@@ -28,3 +29,15 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.pyo
+
+# Secret & Configuration Files
+support_bot_config.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+database/*.sqlite
+database/*.sqlite-wal
+database/*.sqlite-shm
+database/support_bot.sqlite
+database/database.sqlite
+

@@ -1,8 +1,8 @@
 {
-  "bot_token": "8986590066:AAH0gLUYjmkZqZ3r96dBKnjLsS5jzDW8lho",
-  "support_bot_token": "8986590066:AAH0gLUYjmkZqZ3r96dBKnjLsS5jzDW8lho",
-  "admin_bot_token": "8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs",
-  "admin_chat_id": "8814743492",
+  "bot_token": "",
+  "support_bot_token": "",
+  "admin_bot_token": "",
+  "admin_chat_id": "",
   "support_bot_username": "payate_desk_bot",
   "tor_socks_proxy": "socks5h://127.0.0.1:9050",
   "use_tor": true,
