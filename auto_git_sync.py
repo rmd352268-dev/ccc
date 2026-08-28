@@ -19,24 +19,61 @@ import requests
 
 PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
 DB_PATH = os.path.join(PROJECT_DIR, "database", "database.sqlite")
-DEFAULT_BOT_TOKEN = "8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs"
-DEFAULT_ADMIN_CHAT_ID = "8814743492"
+
+# Blocklist of files that must NEVER be committed to Git under any circumstances
+GIT_NEVER_COMMIT_PATTERNS = [
+    ".env",
+    "support_bot_config.json",
+    "database.sqlite",
+    "support_bot.sqlite",
+    ".sqlite",
+    ".key"
+]
 
 def get_tg_credentials():
-    try:
-        if os.path.exists(DB_PATH):
+    tok = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    cid = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "").strip()
+
+    # 1. Check database.sqlite (crypto_settings table)
+    if os.path.exists(DB_PATH) and (not tok or not cid):
+        try:
             conn = sqlite3.connect(DB_PATH, timeout=5)
             c = conn.cursor()
             c.execute("SELECT telegram_bot_token, telegram_chat_id FROM crypto_settings WHERE id = 1")
             row = c.fetchone()
             conn.close()
             if row:
-                tok = row[0] or DEFAULT_BOT_TOKEN
-                cid = row[1] or DEFAULT_ADMIN_CHAT_ID
-                return tok.strip(), str(cid).strip()
-    except Exception:
-        pass
-    return DEFAULT_BOT_TOKEN, DEFAULT_ADMIN_CHAT_ID
+                tok = tok or (str(row[0]).strip() if row[0] else "")
+                cid = cid or (str(row[1]).strip() if row[1] else "")
+        except Exception:
+            pass
+
+    # 2. Check .env file
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_path) and (not tok or not cid):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("TELEGRAM_BOT_TOKEN=") and not tok:
+                        tok = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    elif line.startswith("TELEGRAM_ADMIN_CHAT_ID=") and not cid:
+                        cid = line.split("=", 1)[1].strip().strip('"').strip("'")
+        except Exception:
+            pass
+
+    # 3. Check support_bot_config.json
+    cfg_path = os.path.join(PROJECT_DIR, "support_bot_config.json")
+    if os.path.exists(cfg_path) and (not tok or not cid):
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+                tok = tok or conf.get("admin_bot_token", "").strip()
+                cid = cid or str(conf.get("admin_chat_id", "")).strip()
+        except Exception:
+            pass
+
+    return tok, cid
 
 def send_tg_notification(text):
     bot_token, chat_id = get_tg_credentials()
