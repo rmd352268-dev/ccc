@@ -610,12 +610,17 @@ def process_message(msg):
 # CALLBACK QUERY ROUTING (ADMIN INLINE BUTTONS)
 # ----------------------------------------------------------------------
 def process_callback_query(cb):
+    global ADMIN_CHAT_ID
+    if not ADMIN_CHAT_ID:
+        cfg = support_bridge.load_config()
+        ADMIN_CHAT_ID = str(cfg.get("admin_chat_id", "")).strip()
+
     cb_id = cb.get("id")
     data = cb.get("data", "")
     from_user = cb.get("from", {})
     user_id = str(from_user.get("id"))
 
-    if user_id != ADMIN_CHAT_ID:
+    if not ADMIN_CHAT_ID or user_id != ADMIN_CHAT_ID:
         answer_callback(cb_id, "Access Denied: Admin privileges required.", show_alert=True)
         return
 
