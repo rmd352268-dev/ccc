@@ -139,6 +139,10 @@ def sync_and_push_now(custom_commit_msg=None, notify_telegram=True):
     if not ok_add:
         return False, f"Git Add Failed: {err_add}"
 
+    # Explicit safety unstage for sensitive secret files
+    for pat in GIT_NEVER_COMMIT_PATTERNS:
+        run_git_cmd(["git", "reset", "HEAD", "--", pat])
+
     # Build commit message
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if custom_commit_msg:
