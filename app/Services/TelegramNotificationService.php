@@ -44,8 +44,8 @@ class TelegramNotificationService
                 $settings->save();
             }
 
-            $botToken = trim($settings->telegram_bot_token ?? '8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs');
-            $chatId = trim($settings->telegram_chat_id ?? '8814743492');
+            $botToken = trim($settings->telegram_bot_token ?? env('TELEGRAM_BOT_TOKEN', ''));
+            $chatId = trim($settings->telegram_chat_id ?? env('TELEGRAM_ADMIN_CHAT_ID', ''));
 
             if (empty($botToken) || empty($chatId)) {
                 return false;
@@ -335,8 +335,8 @@ class TelegramNotificationService
     {
         try {
             $settings = CryptoSetting::firstOrCreate(['id' => 1]);
-            $botToken = trim($settings->telegram_bot_token ?? '8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs');
-            $chatId = trim($settings->telegram_chat_id ?? '8814743492');
+            $botToken = trim($settings->telegram_bot_token ?? env('TELEGRAM_BOT_TOKEN', ''));
+            $chatId = trim($settings->telegram_chat_id ?? env('TELEGRAM_ADMIN_CHAT_ID', ''));
 
             if (empty($botToken) || empty($chatId)) return false;
 
