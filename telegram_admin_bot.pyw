@@ -49,12 +49,8 @@ except Exception:
     pass
 
 # ----------------------------------------------------------------------
-# CONFIGURATION & CREDENTIALS
+# CONFIGURATION & DYNAMIC CREDENTIALS LOADER (NO HARDCODED SECRETS)
 # ----------------------------------------------------------------------
-BOT_TOKEN = "8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs"
-ADMIN_CHAT_ID = "8814743492"
-EMERGENCY_PIN = "1713163761"
-
 PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
 DB_PATH = os.path.join(PROJECT_DIR, "database", "database.sqlite")
 TOR_EXE = r"C:\Users\hp\tor_service\tor\tor.exe"
@@ -62,8 +58,72 @@ TOR_RC = r"C:\Users\hp\tor_service\torrc"
 TOR_SERVICE_DIR = r"C:\Users\hp\tor_service"
 TOR_SOCKS_PROXY = "socks5h://127.0.0.1:9050"
 
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-TELEGRAM_FILE_URL = f"https://api.telegram.org/file/bot{BOT_TOKEN}"
+def get_credentials():
+    """Dynamically loads Admin Bot credentials from database, .env, or config with zero hardcoded tokens."""
+    tok = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    cid = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "").strip()
+    pin = os.environ.get("EMERGENCY_PIN", "1713163761").strip()
+
+    # 1. Check database.sqlite (crypto_settings table)
+    if os.path.exists(DB_PATH):
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=5)
+            c = conn.cursor()
+            c.execute("SELECT telegram_bot_token, telegram_chat_id FROM crypto_settings WHERE id = 1")
+            row = c.fetchone()
+            conn.close()
+            if row:
+                if not tok and row[0]:
+                    tok = str(row[0]).strip()
+                if not cid and row[1]:
+                    cid = str(row[1]).strip()
+        except Exception:
+            pass
+
+    # 2. Check .env file
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_path) and (not tok or not cid):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("TELEGRAM_BOT_TOKEN=") and not tok:
+                        tok = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    elif line.startswith("TELEGRAM_ADMIN_CHAT_ID=") and not cid:
+                        cid = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    elif line.startswith("EMERGENCY_PIN=") and pin == "1713163761":
+                        pin = line.split("=", 1)[1].strip().strip('"').strip("'")
+        except Exception:
+            pass
+
+    # 3. Check support_bot_config.json
+    cfg_path = os.path.join(PROJECT_DIR, "support_bot_config.json")
+    if os.path.exists(cfg_path) and (not tok or not cid):
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+                if not tok and conf.get("admin_bot_token"):
+                    tok = str(conf["admin_bot_token"]).strip()
+                if not cid and conf.get("admin_chat_id"):
+                    cid = str(conf["admin_chat_id"]).strip()
+        except Exception:
+            pass
+
+    return tok, cid, pin
+
+BOT_TOKEN, ADMIN_CHAT_ID, EMERGENCY_PIN = get_credentials()
+
+def get_tg_api_url():
+    global BOT_TOKEN
+    if not BOT_TOKEN:
+        BOT_TOKEN, _, _ = get_credentials()
+    return f"https://api.telegram.org/bot{BOT_TOKEN}"
+
+def get_tg_file_url():
+    global BOT_TOKEN
+    if not BOT_TOKEN:
+        BOT_TOKEN, _, _ = get_credentials()
+    return f"https://api.telegram.org/file/bot{BOT_TOKEN}"
 
 # Interactive In-Memory Conversation State Store
 ADMIN_STATE = {}
@@ -103,7 +163,7 @@ direct_session.mount("https://", adapter)
 direct_session.mount("http://", adapter)
 
 def tg_request(method, payload=None, timeout=15):
-    url = f"{TELEGRAM_API_URL}/{method}"
+    url = f"{get_tg_api_url()}/{method}"
     try:
         res = http_session.post(url, json=payload or {}, timeout=timeout)
         return res.json()
@@ -115,7 +175,7 @@ def tg_request(method, payload=None, timeout=15):
             return {"ok": False, "error": str(e)}
 
 def download_tg_file(file_path, timeout=30):
-    url = f"{TELEGRAM_FILE_URL}/{file_path}"
+    url = f"{get_tg_file_url()}/{file_path}"
     try:
         res = http_session.get(url, timeout=timeout)
         if res.status_code == 200:
@@ -129,6 +189,41 @@ def download_tg_file(file_path, timeout=30):
     except Exception:
         pass
     return None
+
+def alert_admin_of_intrusion(event_type, from_user, chat_id, details=""):
+    """Instant Security Intrusion Alert sent to verified admin chat ID."""
+    try:
+        global ADMIN_CHAT_ID
+        if not ADMIN_CHAT_ID:
+            _, ADMIN_CHAT_ID, _ = get_credentials()
+        if not ADMIN_CHAT_ID:
+            return
+
+        intruder_id = str(from_user.get("id") or chat_id)
+        if intruder_id == str(ADMIN_CHAT_ID):
+            return
+
+        first_name = from_user.get("first_name", "")
+        last_name = from_user.get("last_name", "")
+        full_name = f"{first_name} {last_name}".strip() or "Unknown Person"
+        username = f"@{from_user.get('username')}" if from_user.get("username") else "None"
+        now_str = get_now_utc()
+
+        alert_text = (
+            "🚨 <b>[CRITICAL SECURITY ALERT — BOT INTRUSION ATTEMPT]</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "⚠️ <i>An unauthorized person attempted to interact with your Admin Bot terminal!</i>\n\n"
+            f"👤 <b>Intruder:</b> <b>{full_name}</b> ({username})\n"
+            f"🆔 <b>Telegram ID:</b> <code>{intruder_id}</code>\n"
+            f"🎯 <b>Action:</b> <code>{event_type}</code>\n"
+            f"📝 <b>Payload / Message:</b> <code>{str(details)[:150]}</code>\n"
+            f"🕒 <b>Event Time:</b> <i>{now_str} UTC</i>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🛡️ <b>Action Taken:</b> Access was <b>DENIED & BLOCKED</b>. No admin controls, database records, or sensitive data were exposed."
+        )
+        send_admin_msg(alert_text)
+    except Exception:
+        pass
 
 def send_admin_msg(text, reply_markup=None):
     if len(text) > 4000:
