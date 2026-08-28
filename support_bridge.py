@@ -16,10 +16,10 @@ CONFIG_PATH = os.path.join(PROJECT_DIR, "support_bot_config.json")
 DB_PATH = os.path.join(PROJECT_DIR, "database", "support_bot.sqlite")
 
 DEFAULT_CONFIG = {
-    "bot_token": "8986590066:AAH0gLUYjmkZqZ3r96dBKnjLsS5jzDW8lho",
-    "support_bot_token": "8986590066:AAH0gLUYjmkZqZ3r96dBKnjLsS5jzDW8lho",
-    "admin_bot_token": "8615399993:AAEwJGBH7EMQK88sNQzmF1ExNp_tQU1sMVs",
-    "admin_chat_id": "8814743492",
+    "bot_token": "",
+    "support_bot_token": "",
+    "admin_bot_token": "",
+    "admin_chat_id": "",
     "support_bot_username": "payate_desk_bot",
     "tor_socks_proxy": "socks5h://127.0.0.1:9050",
     "use_tor": True,
@@ -29,6 +29,8 @@ DEFAULT_CONFIG = {
 
 def load_config():
     config = dict(DEFAULT_CONFIG)
+    
+    # 1. Load from support_bot_config.json if present
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -36,12 +38,49 @@ def load_config():
                 config.update(user_conf)
         except Exception:
             pass
+
+    # 2. Check .env file for environment credentials
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("TELEGRAM_SUPPORT_BOT_TOKEN="):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if val: config["support_bot_token"] = val
+                    elif line.startswith("TELEGRAM_BOT_TOKEN=") and not config.get("admin_bot_token"):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if val: config["admin_bot_token"] = val
+                    elif line.startswith("TELEGRAM_ADMIN_CHAT_ID=") and not config.get("admin_chat_id"):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if val: config["admin_chat_id"] = val
+        except Exception:
+            pass
+
+    # 3. Fallback to SQLite crypto_settings for Admin Bot Token & Admin Chat ID
+    main_db_path = os.path.join(PROJECT_DIR, "database", "database.sqlite")
+    if os.path.exists(main_db_path) and (not config.get("admin_bot_token") or not config.get("admin_chat_id")):
+        try:
+            conn = sqlite3.connect(main_db_path, timeout=5)
+            c = conn.cursor()
+            c.execute("SELECT telegram_bot_token, telegram_chat_id FROM crypto_settings WHERE id = 1")
+            row = c.fetchone()
+            conn.close()
+            if row:
+                if not config.get("admin_bot_token") and row[0]:
+                    config["admin_bot_token"] = str(row[0]).strip()
+                if not config.get("admin_chat_id") and row[1]:
+                    config["admin_chat_id"] = str(row[1]).strip()
+        except Exception:
+            pass
+
     return config
 
 CONFIG = load_config()
-SUPPORT_BOT_TOKEN = str(CONFIG.get("support_bot_token") or CONFIG.get("bot_token") or DEFAULT_CONFIG["support_bot_token"]).strip()
-ADMIN_BOT_TOKEN = str(CONFIG.get("admin_bot_token", DEFAULT_CONFIG["admin_bot_token"])).strip()
-ADMIN_CHAT_ID = str(CONFIG.get("admin_chat_id", DEFAULT_CONFIG["admin_chat_id"])).strip()
+SUPPORT_BOT_TOKEN = str(CONFIG.get("support_bot_token") or CONFIG.get("bot_token") or "").strip()
+ADMIN_BOT_TOKEN = str(CONFIG.get("admin_bot_token") or "").strip()
+ADMIN_CHAT_ID = str(CONFIG.get("admin_chat_id") or "").strip()
 TOR_SOCKS_PROXY = CONFIG.get("tor_socks_proxy", "socks5h://127.0.0.1:9050")
 
 SUPPORT_BOT_API_URL = f"https://api.telegram.org/bot{SUPPORT_BOT_TOKEN}"
