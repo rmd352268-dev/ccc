@@ -2089,11 +2089,20 @@ def build_emergency_prompt_view():
 # 11. MESSAGE & DOCUMENT PROCESSOR
 # ----------------------------------------------------------------------
 def process_message(msg):
+    global ADMIN_CHAT_ID
+    if not ADMIN_CHAT_ID:
+        _, ADMIN_CHAT_ID, _ = get_credentials()
+
     chat_id = str(msg.get("chat", {}).get("id", ""))
+    from_user = msg.get("from", {})
+    user_id = str(from_user.get("id", ""))
     text = (msg.get("text") or "").strip()
     doc = msg.get("document")
 
-    if chat_id != ADMIN_CHAT_ID:
+    # Strict dual-check: chat_id AND user_id must match authorized ADMIN_CHAT_ID
+    if chat_id != str(ADMIN_CHAT_ID) or (user_id and user_id != str(ADMIN_CHAT_ID)):
+        # Alert real admin immediately of the unauthorized intrusion attempt
+        alert_admin_of_intrusion("Unauthorized Message / Command Attempt", from_user, chat_id, text or (doc.get("file_name") if doc else "Media Payload"))
         tg_request("sendMessage", {
             "chat_id": chat_id,
             "text": "⛔ <b>Access Denied.</b> You are not authorized to use this terminal.",
