@@ -2759,15 +2759,21 @@ def process_message(msg):
 # 12. CALLBACK QUERY PROCESSOR
 # ----------------------------------------------------------------------
 def process_callback_query(cq):
+    global ADMIN_CHAT_ID
+    if not ADMIN_CHAT_ID:
+        _, ADMIN_CHAT_ID, _ = get_credentials()
+
     cq_id = cq.get("id")
-    from_id = str(cq.get("from", {}).get("id", ""))
+    from_user = cq.get("from", {})
+    from_id = str(from_user.get("id", ""))
     data = cq.get("data", "")
     msg = cq.get("message", {})
     chat_id = msg.get("chat", {}).get("id")
     message_id = msg.get("message_id")
 
-    if from_id != ADMIN_CHAT_ID:
-        answer_callback(cq_id, "Access Denied.", show_alert=True)
+    if from_id != str(ADMIN_CHAT_ID):
+        alert_admin_of_intrusion("Unauthorized Callback Query / Button Click Attempt", from_user, chat_id, data)
+        answer_callback(cq_id, "⛔ Access Denied: You are not authorized to use this bot terminal.", show_alert=True)
         return
 
     answer_callback(cq_id)
@@ -3208,10 +3214,14 @@ def health_monitor_loop():
 def main():
     enforce_single_instance()
 
+    global BOT_TOKEN, ADMIN_CHAT_ID, EMERGENCY_PIN
+    BOT_TOKEN, ADMIN_CHAT_ID, EMERGENCY_PIN = get_credentials()
+
+    tok_mask = f"{BOT_TOKEN[:6]}...{BOT_TOKEN[-4:]}" if len(BOT_TOKEN) > 10 else ("Configured" if BOT_TOKEN else "NOT SET")
     print("==================================================")
     print(f"[+] PAYATE CC ADMIN TELEGRAM BOT DAEMON STARTED")
-    print(f"[+] Admin ID: {ADMIN_CHAT_ID}")
-    print(f"[+] Bot Token: {BOT_TOKEN[:10]}...")
+    print(f"[+] Admin ID: {ADMIN_CHAT_ID or 'NOT SET'}")
+    print(f"[+] Bot Token: {tok_mask}")
     print("==================================================")
 
     # Start health monitor in background
