@@ -782,4 +782,17 @@ def main():
     run_support_bot_loop()
 
 if __name__ == "__main__":
-    main()
+    import traceback
+    while True:
+        try:
+            main()
+        except (KeyboardInterrupt, SystemExit):
+            break
+        except Exception:
+            try:
+                err_log_path = os.path.join(support_bridge.PROJECT_DIR, "telegram_support_bot_crash.log")
+                with open(err_log_path, "a", encoding="utf-8") as f:
+                    f.write(f"[{get_now_utc()}] Support Bot Daemon Error:\n{traceback.format_exc()}\n\n")
+            except Exception:
+                pass
+            time.sleep(3)
