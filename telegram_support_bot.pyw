@@ -70,7 +70,7 @@ def enforce_single_instance():
     global _bot_mutex
     try:
         import ctypes
-        _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\PayateSupportTelegramBotMutex")
+        _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateSupportTelegramBotMutex")
         if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
             safe_print("Another instance of Payate Support Bot is already running. Exiting.")
             sys.exit(0)

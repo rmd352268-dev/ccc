@@ -136,7 +136,7 @@ _bot_mutex = None
 def enforce_single_instance():
     global _bot_mutex
     import ctypes
-    _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\PayateAdminTelegramBotMutex")
+    _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateAdminTelegramBotMutex")
     if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
         os._exit(0)
     return True

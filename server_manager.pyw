@@ -516,11 +516,11 @@ class ModernServerManager:
             tor_ok = self.is_process_running("tor.exe")
             web_ok = php_ok or tor_ok
 
-            admin_ok = self.is_mutex_active("Global\\PayateAdminTelegramBotMutex")
+            admin_ok = self.is_mutex_active("PayateAdminTelegramBotMutex") or self.is_mutex_active("Global\\PayateAdminTelegramBotMutex")
             if not admin_ok:
                 admin_ok = self.is_script_running("telegram_admin_bot.pyw")
 
-            support_ok = self.is_mutex_active("Global\\PayateSupportTelegramBotMutex")
+            support_ok = self.is_mutex_active("PayateSupportTelegramBotMutex") or self.is_mutex_active("Global\\PayateSupportTelegramBotMutex")
             if not support_ok:
                 support_ok = self.is_script_running("telegram_support_bot.pyw")
 
