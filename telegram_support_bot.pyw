@@ -50,7 +50,12 @@ try:
 except Exception:
     pass
 
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{SUPPORT_BOT_TOKEN}"
+def get_support_api_url():
+    global SUPPORT_BOT_TOKEN
+    if not SUPPORT_BOT_TOKEN:
+        cfg = support_bridge.load_config()
+        SUPPORT_BOT_TOKEN = str(cfg.get("support_bot_token") or cfg.get("bot_token") or "").strip()
+    return f"https://api.telegram.org/bot{SUPPORT_BOT_TOKEN}"
 
 # Interactive In-Memory Conversation & Reply States
 ADMIN_STATE = {}
@@ -94,7 +99,7 @@ direct_session.mount("https://", adapter)
 direct_session.mount("http://", adapter)
 
 def tg_request(method, payload=None, timeout=20):
-    url = f"{TELEGRAM_API_URL}/{method}"
+    url = f"{get_support_api_url()}/{method}"
     if CONFIG.get("use_tor", True):
         try:
             res = http_session.post(url, json=payload or {}, timeout=timeout)
@@ -376,13 +381,18 @@ def send_user_faq(chat_id):
 # DISPATCHER (ADMIN vs USER)
 # ----------------------------------------------------------------------
 def process_message(msg):
+    global ADMIN_CHAT_ID
+    if not ADMIN_CHAT_ID:
+        cfg = support_bridge.load_config()
+        ADMIN_CHAT_ID = str(cfg.get("admin_chat_id", "")).strip()
+
     chat = msg.get("chat", {})
     chat_id = str(chat.get("id"))
     from_user = msg.get("from", {})
     user_id = str(from_user.get("id"))
     text = msg.get("text", "").strip()
 
-    is_admin = (chat_id == ADMIN_CHAT_ID or user_id == ADMIN_CHAT_ID)
+    is_admin = bool(ADMIN_CHAT_ID and (chat_id == ADMIN_CHAT_ID or user_id == ADMIN_CHAT_ID))
 
     # ==================================================================
     # 👑 1. ADMIN USER LOGIC (IF ADMIN MESSAGES IN SUPPORT BOT)
