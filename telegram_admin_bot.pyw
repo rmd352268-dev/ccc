@@ -128,22 +128,44 @@ def get_tg_file_url():
 # Interactive In-Memory Conversation State Store
 ADMIN_STATE = {}
 
-# ----------------------------------------------------------------------
-# SINGLETON INSTANCE LOCK (WINDOWS NATIVE NAMED MUTEX)
+# SINGLETON INSTANCE LOCK (CROSS-PLATFORM)
 # ----------------------------------------------------------------------
 _bot_mutex = None
 
 def enforce_single_instance():
     global _bot_mutex
-    import ctypes
-    _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateAdminTelegramBotMutex")
-    if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-        os._exit(0)
+    if os.name == 'nt':
+        try:
+            import ctypes
+            _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateAdminTelegramBotMutex")
+            if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+                os._exit(0)
+        except Exception:
+            pass
     return True
 
 # ----------------------------------------------------------------------
 # HTTP SESSIONS WITH RESILIENT SOCKS5 / DIRECT RETRIES
 # ----------------------------------------------------------------------
+_admin_tor_status = None
+_admin_tor_last_check = 0
+
+def is_tor_available():
+    global _admin_tor_status, _admin_tor_last_check
+    now = time.time()
+    if _admin_tor_status is not None and (now - _admin_tor_last_check < 30):
+        return _admin_tor_status
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.4)
+        res = s.connect_ex(("127.0.0.1", 9050))
+        s.close()
+        _admin_tor_status = (res == 0)
+    except Exception:
+        _admin_tor_status = False
+    _admin_tor_last_check = now
+    return _admin_tor_status
+
 http_session = requests.Session()
 adapter = HTTPAdapter(
     pool_connections=25,
@@ -157,31 +179,34 @@ http_session.proxies = {
     "https": TOR_SOCKS_PROXY
 }
 
-# Direct session fallback if Tor SOCKS proxy is restarting
+# Direct session fallback if Tor SOCKS proxy is restarting or not running (e.g. Render)
 direct_session = requests.Session()
 direct_session.mount("https://", adapter)
 direct_session.mount("http://", adapter)
 
 def tg_request(method, payload=None, timeout=15):
     url = f"{get_tg_api_url()}/{method}"
-    try:
-        res = http_session.post(url, json=payload or {}, timeout=timeout)
-        return res.json()
-    except Exception:
+    if is_tor_available():
         try:
-            res = direct_session.post(url, json=payload or {}, timeout=timeout)
+            res = http_session.post(url, json=payload or {}, timeout=timeout)
             return res.json()
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+        except Exception:
+            pass
+    try:
+        res = direct_session.post(url, json=payload or {}, timeout=timeout)
+        return res.json()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 def download_tg_file(file_path, timeout=30):
     url = f"{get_tg_file_url()}/{file_path}"
-    try:
-        res = http_session.get(url, timeout=timeout)
-        if res.status_code == 200:
-            return res.content
-    except Exception:
-        pass
+    if is_tor_available():
+        try:
+            res = http_session.get(url, timeout=timeout)
+            if res.status_code == 200:
+                return res.content
+        except Exception:
+            pass
     try:
         res = direct_session.get(url, timeout=timeout)
         if res.status_code == 200:
@@ -343,28 +368,41 @@ def is_port_listening(host="127.0.0.1", port=8000):
         return False
 
 def is_proc_running(name):
-    try:
-        out = subprocess.check_output(
-            f'tasklist /FI "IMAGENAME eq {name}"',
-            shell=True,
-            creationflags=0x08000000
-        ).decode(errors="ignore")
-        return name.lower() in out.lower()
-    except Exception:
-        return False
+    if os.name == "nt":
+        try:
+            extra = {"creationflags": 0x08000000}
+            out = subprocess.check_output(
+                f'tasklist /FI "IMAGENAME eq {name}"',
+                shell=True,
+                **extra
+            ).decode(errors="ignore")
+            return name.lower() in out.lower()
+        except Exception:
+            return False
+    else:
+        try:
+            clean_name = name.replace(".exe", "")
+            out = subprocess.check_output(
+                f'pgrep -f "{clean_name}"',
+                shell=True
+            ).decode(errors="ignore")
+            return bool(out.strip())
+        except Exception:
+            return False
 
 def start_all_services():
     started = []
-    if not is_proc_running("tor.exe"):
+    extra_flags = {"creationflags": 0x08000000} if os.name == "nt" else {}
+    if not is_proc_running("tor.exe") and not is_proc_running("tor"):
         if os.path.exists(TOR_EXE) and os.path.exists(TOR_RC):
-            subprocess.Popen([TOR_EXE, "-f", TOR_RC], creationflags=0x08000000)
+            subprocess.Popen([TOR_EXE, "-f", TOR_RC], **extra_flags)
             started.append("Tor Daemon")
     
     if not is_port_listening("127.0.0.1", 8000):
         subprocess.Popen(
             ["php", "artisan", "serve", "--host=127.0.0.1", "--port=8000"],
             cwd=PROJECT_DIR,
-            creationflags=0x08000000
+            **extra_flags
         )
         started.append("Laravel PHP Web Server (Port 8000)")
     
@@ -372,8 +410,13 @@ def start_all_services():
 
 def stop_all_services():
     try:
-        subprocess.run('taskkill /F /IM tor.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
-        subprocess.run('taskkill /F /IM php.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
+        extra_flags = {"creationflags": 0x08000000} if os.name == "nt" else {}
+        if os.name == "nt":
+            subprocess.run('taskkill /F /IM tor.exe /T', shell=True, capture_output=True, **extra_flags)
+            subprocess.run('taskkill /F /IM php.exe /T', shell=True, capture_output=True, **extra_flags)
+        else:
+            subprocess.run('pkill -f tor || true', shell=True, capture_output=True)
+            subprocess.run('pkill -f "artisan serve" || true', shell=True, capture_output=True)
         return True
     except Exception:
         return False
@@ -390,10 +433,14 @@ def get_current_onion_domain():
 
 def generate_new_onion_domain():
     try:
-        subprocess.run('taskkill /F /IM tor.exe /T', shell=True, creationflags=0x08000000, capture_output=True)
+        extra_flags = {"creationflags": 0x08000000} if os.name == "nt" else {}
+        if os.name == "nt":
+            subprocess.run('taskkill /F /IM tor.exe /T', shell=True, capture_output=True, **extra_flags)
+        else:
+            subprocess.run('pkill -f tor || true', shell=True, capture_output=True)
         time.sleep(1)
 
-        hs_dir = r"C:\Users\hp\tor_service\hidden_service"
+        hs_dir = r"C:\Users\hp\tor_service\hidden_service" if os.name == "nt" else "/var/lib/tor/hidden_service"
         if os.path.exists(hs_dir):
             backup_dir = f"{hs_dir}_backup_{int(time.time())}"
             try:
@@ -402,7 +449,8 @@ def generate_new_onion_domain():
                 pass
         
         os.makedirs(hs_dir, exist_ok=True)
-        subprocess.Popen([TOR_EXE, "-f", TOR_RC], creationflags=0x08000000)
+        if os.path.exists(TOR_EXE):
+            subprocess.Popen([TOR_EXE, "-f", TOR_RC], **extra_flags)
         
         hostname_path = os.path.join(hs_dir, "hostname")
         new_onion = None
