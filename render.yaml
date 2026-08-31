@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ccc-web
+    name: payatecc
     runtime: docker
     plan: free
     region: oregon
