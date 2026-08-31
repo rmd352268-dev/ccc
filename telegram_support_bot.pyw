@@ -62,20 +62,21 @@ ADMIN_STATE = {}
 USER_LAST_ACK = {}
 
 # ----------------------------------------------------------------------
-# SINGLETON INSTANCE LOCK (WINDOWS NAMED MUTEX)
+# SINGLETON INSTANCE LOCK (CROSS-PLATFORM)
 # ----------------------------------------------------------------------
 _bot_mutex = None
 
 def enforce_single_instance():
     global _bot_mutex
-    try:
-        import ctypes
-        _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateSupportTelegramBotMutex")
-        if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-            safe_print("Another instance of Payate Support Bot is already running. Exiting.")
-            sys.exit(0)
-    except Exception:
-        pass
+    if os.name == 'nt':
+        try:
+            import ctypes
+            _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "PayateSupportTelegramBotMutex")
+            if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+                safe_print("Another instance of Payate Support Bot is already running. Exiting.")
+                sys.exit(0)
+        except Exception:
+            pass
 
 # ----------------------------------------------------------------------
 # HTTP SESSIONS (TOR SOCKS5 WITH DIRECT FALLBACK)
@@ -100,7 +101,7 @@ direct_session.mount("http://", adapter)
 
 def tg_request(method, payload=None, timeout=20):
     url = f"{get_support_api_url()}/{method}"
-    if CONFIG.get("use_tor", True):
+    if CONFIG.get("use_tor", True) and hasattr(support_bridge, 'is_tor_proxy_alive') and support_bridge.is_tor_proxy_alive():
         try:
             res = http_session.post(url, json=payload or {}, timeout=timeout)
             return res.json()
