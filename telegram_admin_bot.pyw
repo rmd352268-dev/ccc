@@ -51,7 +51,7 @@ except Exception:
 # ----------------------------------------------------------------------
 # CONFIGURATION & DYNAMIC CREDENTIALS LOADER (NO HARDCODED SECRETS)
 # ----------------------------------------------------------------------
-PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(PROJECT_DIR, "database", "database.sqlite")
 TOR_EXE = r"C:\Users\hp\tor_service\tor\tor.exe"
 TOR_RC = r"C:\Users\hp\tor_service\torrc"
