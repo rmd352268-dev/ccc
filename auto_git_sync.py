@@ -17,7 +17,7 @@ import datetime
 import sqlite3
 import requests
 
-PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(PROJECT_DIR, "database", "database.sqlite")
 
 # Blocklist of files that must NEVER be committed to Git under any circumstances

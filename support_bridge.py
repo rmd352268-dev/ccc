@@ -11,7 +11,7 @@ from urllib3.util.retry import Retry
 # ----------------------------------------------------------------------
 # PATHS & CONFIGURATION
 # ----------------------------------------------------------------------
-PROJECT_DIR = r"C:\Users\hp\Desktop\ccc"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(PROJECT_DIR, "support_bot_config.json")
 DB_PATH = os.path.join(PROJECT_DIR, "database", "support_bot.sqlite")
 
