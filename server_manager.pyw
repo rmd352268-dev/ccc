@@ -670,8 +670,9 @@ class ModernServerManager:
                 subprocess.Popen([TOR_EXE, "-f", TOR_RC], cwd=TOR_DIR, creationflags=0x08000000)
         if not self.is_port_open("127.0.0.1", 8000):
             php_cmd = PHP_EXE if os.path.exists(PHP_EXE) else "php"
-            subprocess.Popen([php_cmd, "-S", "127.0.0.1:8000", "-t", "public"], cwd=PROJECT_DIR, creationflags=0x08000000)
+            subprocess.Popen([php_cmd, "artisan", "serve", "--host=127.0.0.1", "--port=8000"], cwd=PROJECT_DIR, creationflags=0x08000000)
         self.show_alert("✔ Website & Tor launched!", "#4ade80")
+
 
     def _stop_website(self):
         self.show_alert("Stopping Website & Tor...", "#f87171")
