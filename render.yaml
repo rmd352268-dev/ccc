@@ -15,3 +15,7 @@ services:
         value: stderr
       - key: DB_CONNECTION
         value: sqlite
+      - key: APP_URL
+        value: https://payateccc.onrender.com
+      - key: ASSET_URL
+        value: https://payateccc.onrender.com

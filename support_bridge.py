@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import socket
 import sqlite3
 import datetime
 import requests
@@ -89,6 +90,25 @@ ADMIN_BOT_API_URL = f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}"
 # ----------------------------------------------------------------------
 # HTTP SESSIONS (TOR SOCKS5 WITH DIRECT FALLBACK)
 # ----------------------------------------------------------------------
+_tor_proxy_status = None
+_tor_proxy_last_check = 0
+
+def is_tor_proxy_alive():
+    global _tor_proxy_status, _tor_proxy_last_check
+    now = time.time()
+    if _tor_proxy_status is not None and (now - _tor_proxy_last_check < 30):
+        return _tor_proxy_status
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.4)
+        res = s.connect_ex(("127.0.0.1", 9050))
+        s.close()
+        _tor_proxy_status = (res == 0)
+    except Exception:
+        _tor_proxy_status = False
+    _tor_proxy_last_check = now
+    return _tor_proxy_status
+
 http_session = requests.Session()
 adapter = HTTPAdapter(
     pool_connections=25,
@@ -114,7 +134,7 @@ def tg_api_call(bot_type, method, payload=None, timeout=20):
     base_url = SUPPORT_BOT_API_URL if bot_type == "support" else ADMIN_BOT_API_URL
     url = f"{base_url}/{method}"
     
-    if CONFIG.get("use_tor", True):
+    if CONFIG.get("use_tor", True) and is_tor_proxy_alive():
         try:
             res = http_session.post(url, json=payload or {}, timeout=timeout)
             return res.json()
