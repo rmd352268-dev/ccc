@@ -19,15 +19,41 @@ php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
-echo "--> Starting Telegram Admin Bot in background..."
+echo "--> Starting Telegram Bots Supervisor Engine..."
+# Supervised Telegram Admin Bot runner (Auto-restarts on unexpected crash)
 if [ -f "telegram_admin_bot.pyw" ]; then
-    python3 telegram_admin_bot.pyw &
+    (
+        echo "[Admin Bot Daemon] Initiating supervisor loop..."
+        while true; do
+            echo "[Admin Bot Daemon] Starting telegram_admin_bot.pyw at $(date)..."
+            python3 telegram_admin_bot.pyw >> /var/www/html/storage/logs/admin_bot.log 2>&1 || true
+            echo "[Admin Bot Daemon] Process exited. Auto-recovering in 3 seconds..."
+            sleep 3
+        done
+    ) &
 fi
 
-echo "--> Starting Telegram Support Bot in background..."
+# Supervised Telegram Support Bot runner (Auto-restarts on unexpected crash)
 if [ -f "telegram_support_bot.pyw" ]; then
-    python3 telegram_support_bot.pyw &
+    (
+        echo "[Support Bot Daemon] Initiating supervisor loop..."
+        while true; do
+            echo "[Support Bot Daemon] Starting telegram_support_bot.pyw at $(date)..."
+            python3 telegram_support_bot.pyw >> /var/www/html/storage/logs/support_bot.log 2>&1 || true
+            echo "[Support Bot Daemon] Process exited. Auto-recovering in 3 seconds..."
+            sleep 3
+        done
+    ) &
 fi
+
+# Keepalive Ping Loop (Pings local health check every 5 minutes)
+(
+    sleep 30
+    while true; do
+        curl -s -o /dev/null "http://127.0.0.1:${PORT}/up" || true
+        sleep 300
+    done
+) &
 
 echo "--> Starting PHP-FPM..."
 php-fpm -D

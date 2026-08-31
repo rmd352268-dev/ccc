@@ -97,13 +97,14 @@ def send_tg_notification(text):
 
 def run_git_cmd(cmd_list, cwd=PROJECT_DIR, timeout=60):
     try:
+        extra_flags = {"creationflags": 0x08000000} if os.name == "nt" else {}
         res = subprocess.run(
             cmd_list,
             cwd=cwd,
             capture_output=True,
             text=True,
-            creationflags=0x08000000,  # CREATE_NO_WINDOW
-            timeout=timeout
+            timeout=timeout,
+            **extra_flags
         )
         return res.returncode == 0, res.stdout.strip(), res.stderr.strip()
     except Exception as e:
@@ -222,14 +223,15 @@ def start_background_git_sync_thread():
     return t
 
 if __name__ == "__main__":
-    import ctypes
-    try:
-        # Enforce single instance for standalone runner
-        mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\PayateAutoGitSyncMutex")
-        if ctypes.windll.kernel32.GetLastError() == 183:
-            sys.exit(0)
-    except Exception:
-        pass
+    if os.name == 'nt':
+        try:
+            import ctypes
+            # Enforce single instance for standalone runner
+            mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\PayateAutoGitSyncMutex")
+            if ctypes.windll.kernel32.GetLastError() == 183:
+                sys.exit(0)
+        except Exception:
+            pass
 
     print("==================================================")
     print("[+] PAYATE CC - AUTOMATIC GITHUB SYNC ENGINE")
