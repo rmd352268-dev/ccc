@@ -32,7 +32,7 @@ RUN docker-php-ext-configure intl && \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Install Python dependencies for Telegram bots
-RUN pip3 install --no-cache-dir --break-system-packages requests urllib3 bcrypt
+RUN pip3 install --no-cache-dir --break-system-packages requests urllib3 bcrypt PySocks
 
 # Copy project files
 COPY . .
