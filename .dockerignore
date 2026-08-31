@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+vendor
+.env
+.env.backup
+.phpunit.result.cache
+storage/*.key
+npm-debug.log
+yarn-error.log
+cloudflared.exe
+*.bat
