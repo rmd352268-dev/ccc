@@ -160,3 +160,15 @@ Route::prefix('airana1713admin')->name('admin.')->group(function () {
     // Wallets & Options Reset
     Route::post('/wallets/reset-default', [AdminController::class, 'resetDefaultWallets'])->name('wallets.resetDefault');
 });
+
+// Fallback & Malformed URL Redirection Protections (Handles /https:/login, /http:/login, etc.)
+Route::any('/https:/{path?}', function ($path = '') {
+    $cleanPath = '/' . ltrim($path, '/');
+    return redirect($cleanPath ?: '/');
+})->where('path', '.*');
+
+Route::any('/http:/{path?}', function ($path = '') {
+    $cleanPath = '/' . ltrim($path, '/');
+    return redirect($cleanPath ?: '/');
+})->where('path', '.*');
+
