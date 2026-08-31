@@ -533,41 +533,65 @@ def get_system_stats():
 # ----------------------------------------------------------------------
 # SYSTEM HEALTH, INTRUSION DETECTION & SECURITY AUDIT ENGINE
 # ----------------------------------------------------------------------
-import ctypes
 import shutil
 
-class MEMORYSTATUSEX(ctypes.Structure):
-    _fields_ = [
-        ("dwLength", ctypes.c_ulong),
-        ("dwMemoryLoad", ctypes.c_ulong),
-        ("ullTotalPhys", ctypes.c_ulonglong),
-        ("ullAvailPhys", ctypes.c_ulonglong),
-        ("ullTotalPageFile", ctypes.c_ulonglong),
-        ("ullAvailPageFile", ctypes.c_ulonglong),
-        ("ullTotalVirtual", ctypes.c_ulonglong),
-        ("ullAvailVirtual", ctypes.c_ulonglong),
-        ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
-    ]
+if os.name == 'nt':
+    import ctypes
+    class MEMORYSTATUSEX(ctypes.Structure):
+        _fields_ = [
+            ("dwLength", ctypes.c_ulong),
+            ("dwMemoryLoad", ctypes.c_ulong),
+            ("ullTotalPhys", ctypes.c_ulonglong),
+            ("ullAvailPhys", ctypes.c_ulonglong),
+            ("ullTotalPageFile", ctypes.c_ulonglong),
+            ("ullAvailPageFile", ctypes.c_ulonglong),
+            ("ullTotalVirtual", ctypes.c_ulonglong),
+            ("ullAvailVirtual", ctypes.c_ulonglong),
+            ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
+        ]
 
 def get_ram_stats():
-    try:
-        stat = MEMORYSTATUSEX()
-        stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
-        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
-        total_gb = stat.ullTotalPhys / (1024**3)
-        avail_gb = stat.ullAvailPhys / (1024**3)
-        used_gb = total_gb - avail_gb
-        return total_gb, used_gb, avail_gb, int(stat.dwMemoryLoad)
-    except Exception:
-        return 0.0, 0.0, 0.0, 0
+    if os.name == 'nt':
+        try:
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+            total_gb = stat.ullTotalPhys / (1024**3)
+            avail_gb = stat.ullAvailPhys / (1024**3)
+            used_gb = total_gb - avail_gb
+            return total_gb, used_gb, avail_gb, int(stat.dwMemoryLoad)
+        except Exception:
+            return 0.0, 0.0, 0.0, 0
+    else:
+        try:
+            with open('/proc/meminfo', 'r') as f:
+                lines = f.readlines()
+            mem = {}
+            for line in lines:
+                parts = line.split(':')
+                if len(parts) == 2:
+                    mem[parts[0].strip()] = int(parts[1].split()[0])
+            total_kb = mem.get('MemTotal', 0)
+            avail_kb = mem.get('MemAvailable', mem.get('MemFree', 0))
+            total_gb = total_kb / (1024**2)
+            avail_gb = avail_kb / (1024**2)
+            used_gb = total_gb - avail_gb
+            pct = int((used_gb / total_gb) * 100) if total_gb > 0 else 0
+            return total_gb, used_gb, avail_gb, pct
+        except Exception:
+            return 0.0, 0.0, 0.0, 0
 
-def get_disk_stats(drive="C:"):
+def get_disk_stats(drive=None):
     try:
+        if not drive:
+            drive = "C:" if os.name == "nt" else "/"
+        elif os.name != "nt" and ":" in str(drive):
+            drive = "/"
         total, used, free = shutil.disk_usage(drive)
         total_gb = total / (1024**3)
         used_gb = used / (1024**3)
         free_gb = free / (1024**3)
-        percent = int(used * 100 / total)
+        percent = int(used * 100 / total) if total > 0 else 0
         return total_gb, used_gb, free_gb, percent
     except Exception:
         return 0.0, 0.0, 0.0, 0
@@ -3241,20 +3265,21 @@ def health_monitor_loop():
     last_state = None
     while True:
         try:
-            php = is_port_listening("127.0.0.1", 8000)
-            tor = is_proc_running("tor.exe")
-            current_state = (php, tor)
+            if os.name == 'nt':
+                php = is_port_listening("127.0.0.1", 8000)
+                tor = is_proc_running("tor.exe")
+                current_state = (php, tor)
 
-            if last_state is not None:
-                if last_state == (True, True) and current_state != (True, True):
-                    send_admin_msg(
-                        f"🚨 <b>[CRITICAL ALERT] SERVER DOWNTIME DETECTED!</b>\n\n"
-                        f"Laravel Web: {'🟢 Running' if php else '🔴 CRASHED/STOPPED'}\n"
-                        f"Tor Network: {'🟢 Running' if tor else '🔴 CRASHED/STOPPED'}\n\n"
-                        f"⚡ <i>Use /start_server to recover immediately.</i>",
-                        get_main_menu_keyboard()
-                    )
-            last_state = current_state
+                if last_state is not None:
+                    if last_state == (True, True) and current_state != (True, True):
+                        send_admin_msg(
+                            f"🚨 <b>[CRITICAL ALERT] SERVER DOWNTIME DETECTED!</b>\n\n"
+                            f"Laravel Web: {'🟢 Running' if php else '🔴 CRASHED/STOPPED'}\n"
+                            f"Tor Network: {'🟢 Running' if tor else '🔴 CRASHED/STOPPED'}\n\n"
+                            f"⚡ <i>Use /start_server to recover immediately.</i>",
+                            get_main_menu_keyboard()
+                        )
+                last_state = current_state
         except Exception:
             pass
         time.sleep(30)
