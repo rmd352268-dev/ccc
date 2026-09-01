@@ -37,6 +37,11 @@ class TelegramNotificationService
     public static function sendDepositAlert(Deposit $deposit): bool
     {
         try {
+            // Prevent duplicate alert if already sent
+            if (!empty($deposit->telegram_message_id) || (!empty($deposit->admin_notes) && str_contains($deposit->admin_notes, '[ALERTED]'))) {
+                return true;
+            }
+
             $settings = CryptoSetting::firstOrCreate(['id' => 1]);
 
             if (empty($settings->security_secret_token)) {
@@ -105,9 +110,97 @@ class TelegramNotificationService
                 'disable_web_page_preview' => true,
             ]);
 
-            return $response->successful();
+            if ($response->successful()) {
+                $data = $response->json();
+                $msgId = $data['result']['message_id'] ?? null;
+                $chatIdResult = $data['result']['chat']['id'] ?? $chatId;
+
+                $currNotes = $deposit->admin_notes ?? '';
+                $newNotes = trim($currNotes . ' [ALERTED]');
+                
+                $deposit->update([
+                    'telegram_message_id' => $msgId ? (string)$msgId : null,
+                    'telegram_chat_id' => (string)$chatIdResult,
+                    'admin_notes' => $newNotes
+                ]);
+                return true;
+            }
+
+            return false;
         } catch (\Exception $e) {
             Log::error("Telegram Deposit Alert Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update/Edit existing Telegram message to show final Approved/Rejected status & remove action buttons
+     */
+    public static function updateDepositTelegramMessage(Deposit $deposit, string $status, string $note = ''): bool
+    {
+        try {
+            $settings = CryptoSetting::firstOrCreate(['id' => 1]);
+            $botToken = trim($settings->telegram_bot_token ?? env('TELEGRAM_BOT_TOKEN', ''));
+            $chatId = !empty($deposit->telegram_chat_id) ? $deposit->telegram_chat_id : trim($settings->telegram_chat_id ?? env('TELEGRAM_ADMIN_CHAT_ID', ''));
+            $messageId = $deposit->telegram_message_id;
+
+            if (empty($botToken) || empty($chatId)) {
+                return false;
+            }
+
+            $user = User::where('username', $deposit->username)->first();
+            $userBalance = $user ? number_format($user->balance, 2) : '0.00';
+            $senderInfo = !empty($deposit->txid) ? $deposit->txid : 'DIRECT_DEPOSIT';
+            $tgUserText = !empty($deposit->telegram_username) 
+                ? (str_starts_with($deposit->telegram_username, '@') ? $deposit->telegram_username : '@' . $deposit->telegram_username) 
+                : 'Not Provided';
+            $timeStr = date('Y-m-d H:i:s') . ' UTC';
+
+            if ($status === 'completed') {
+                $text = "✅ <b>[PAYATE CC] DEPOSIT APPROVED & CREDITED!</b>\n\n"
+                      . "👤 <b>Account Name:</b> @{$deposit->username}\n"
+                      . "📱 <b>Telegram:</b> <b>{$tgUserText}</b>\n"
+                      . "💵 <b>Amount:</b> <b>\${$deposit->amount} USD</b>\n"
+                      . "💎 <b>Gateway:</b> {$deposit->currency}\n"
+                      . "🏷️ <b>Ref ID:</b> <code>{$deposit->trx_id}</code>\n"
+                      . "📝 <b>Sender / TxID:</b> <code>{$senderInfo}</code>\n"
+                      . "🏦 <b>Receiving Wallet:</b> <code>{$deposit->address}</code>\n"
+                      . "💳 <b>User New Balance:</b> <b>\${$userBalance}</b>\n"
+                      . "🕒 <b>Approved At:</b> {$timeStr}\n\n"
+                      . "🟢 <b>Status:</b> <b>APPROVED & CREDITED</b>" . (!empty($note) ? " <i>({$note})</i>" : "");
+            } else {
+                $text = "❌ <b>[PAYATE CC] DEPOSIT REJECTED</b>\n\n"
+                      . "👤 <b>Account Name:</b> @{$deposit->username}\n"
+                      . "📱 <b>Telegram:</b> <b>{$tgUserText}</b>\n"
+                      . "💵 <b>Amount:</b> <b>\${$deposit->amount} USD</b> ({$deposit->currency})\n"
+                      . "🏷️ <b>Ref ID:</b> <code>{$deposit->trx_id}</code>\n"
+                      . "📝 <b>Sender / TxID:</b> <code>{$senderInfo}</code>\n"
+                      . "🕒 <b>Rejected At:</b> {$timeStr}\n\n"
+                      . "🔴 <b>Status:</b> <b>REJECTED BY ADMIN</b>" . (!empty($note) ? " <i>({$note})</i>" : "");
+            }
+
+            $edited = false;
+            if (!empty($messageId)) {
+                // Edit original message and completely remove inline buttons
+                $response = self::getHttpClient()->post("https://api.telegram.org/bot{$botToken}/editMessageText", [
+                    'chat_id' => $chatId,
+                    'message_id' => (int)$messageId,
+                    'text' => $text,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode(['inline_keyboard' => []]),
+                    'disable_web_page_preview' => true,
+                ]);
+                $edited = $response->successful();
+            }
+
+            // Fallback: If edit wasn't possible (e.g. no message_id stored or older message), send a simple message
+            if (!$edited) {
+                self::sendSimpleMessage($text);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Telegram Update Deposit Message Error: " . $e->getMessage());
             return false;
         }
     }
@@ -168,9 +261,7 @@ class TelegramNotificationService
         $deposit->admin_notes = 'Approved via Telegram 1-Click Action';
         $deposit->save();
 
-        self::sendSimpleMessage("✅ <b>[Payate CC] DEPOSIT APPROVED & CREDITED!</b>\n\n"
-            . "Deposit <code>{$deposit->trx_id}</code> (\${$deposit->amount}) for <b>@{$deposit->username}</b> has been credited.\n"
-            . "User New Balance: <b>\$" . ($user ? number_format($user->balance, 2) : '0.00') . "</b>");
+        self::updateDepositTelegramMessage($deposit, 'completed', 'Approved via Telegram 1-Click Action');
 
         return [
             'success' => true,
@@ -196,7 +287,7 @@ class TelegramNotificationService
         $deposit->admin_notes = 'Rejected via Telegram Admin Action';
         $deposit->save();
 
-        self::sendSimpleMessage("❌ <b>[Payate CC] DEPOSIT REJECTED</b>\n\nDeposit <code>{$deposit->trx_id}</code> (\${$deposit->amount}) for @{$deposit->username} was rejected.");
+        self::updateDepositTelegramMessage($deposit, 'rejected', 'Rejected via Telegram Admin Action');
 
         return [
             'success' => true,

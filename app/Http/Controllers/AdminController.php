@@ -242,6 +242,9 @@ class AdminController extends Controller
             $totalRecharge = (float)session()->get('total_recharge', 0.00);
             session()->put('user_balance', $currentBal + (float)$deposit->amount);
             session()->put('total_recharge', $totalRecharge + (float)$deposit->amount);
+
+            // Update & clear Telegram alert buttons
+            TelegramNotificationService::updateDepositTelegramMessage($deposit, 'completed', 'Approved via Admin Panel');
         }
 
         return back()->with('success', "Deposit #{$deposit->trx_id} approved. \${$deposit->amount} credited to user balance.");
@@ -255,6 +258,9 @@ class AdminController extends Controller
         $deposit->status = 'rejected';
         $deposit->admin_notes = 'Rejected: Invalid or unconfirmed blockchain TxID';
         $deposit->save();
+
+        // Update & clear Telegram alert buttons
+        TelegramNotificationService::updateDepositTelegramMessage($deposit, 'rejected', 'Rejected via Admin Panel');
 
         return back()->with('error', "Deposit #{$deposit->trx_id} has been rejected.");
     }
