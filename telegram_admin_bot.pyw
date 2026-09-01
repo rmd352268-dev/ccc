@@ -1175,11 +1175,12 @@ def approve_deposit_action(deposit_id):
 
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
+        new_bal = 0.0
         if user:
             new_bal = float(user["balance"] or 0) + amount
             new_tot = float(user["total_recharge"] or 0) + amount
             cursor.execute(
-                "UPDATE users SET balance = ?, total_recharge = ?, updated_at = ? WHERE id = ?",
+                "UPDATE users SET balance = ?, total_recharge = ?, is_activated = 1, updated_at = ? WHERE id = ?",
                 (new_bal, new_tot, now_str, user["id"])
             )
 
@@ -1202,6 +1203,33 @@ def approve_deposit_action(deposit_id):
                         )
 
         conn.commit()
+
+        # Automatically update and clear buttons on the original Telegram alert message
+        if "telegram_message_id" in deposit.keys() and deposit["telegram_message_id"]:
+            try:
+                orig_msg_id = int(deposit["telegram_message_id"])
+                orig_chat_id = deposit["telegram_chat_id"] if ("telegram_chat_id" in deposit.keys() and deposit["telegram_chat_id"]) else ADMIN_CHAT_ID
+                tx_info = deposit["txid"] if ("txid" in deposit.keys() and deposit["txid"]) else "DIRECT_DEPOSIT"
+                tg_u = deposit["telegram_username"] if ("telegram_username" in deposit.keys() and deposit["telegram_username"]) else "Not Provided"
+                
+                updated_text = (
+                    "✅ <b>[PAYATE CC] DEPOSIT APPROVED & CREDITED!</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    f"👤 <b>Account Name:</b> @{deposit['username']}\n"
+                    f"📱 <b>Telegram:</b> <b>{tg_u}</b>\n"
+                    f"💵 <b>Amount:</b> <b>${amount:.2f} USD</b> ({deposit['currency']})\n"
+                    f"🏷️ <b>Ref ID:</b> <code>{deposit['trx_id']}</code>\n"
+                    f"📝 <b>TxID:</b> <code>{tx_info}</code>\n"
+                    f"🏦 <b>Wallet:</b> <code>{deposit['address']}</code>\n"
+                    f"💳 <b>User New Balance:</b> <b>${new_bal:.2f}</b>\n"
+                    f"🕒 <b>Approved At:</b> {now_str} UTC\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "🟢 <b>Status:</b> <b>APPROVED & CREDITED</b> <i>(via Telegram)</i>"
+                )
+                edit_admin_msg(orig_chat_id, orig_msg_id, updated_text, {"inline_keyboard": []})
+            except Exception:
+                pass
+
         conn.close()
         return True, f"Deposit #{deposit['trx_id']} approved! ${amount:.2f} credited to @{username}."
     except Exception as e:
@@ -1224,6 +1252,29 @@ def reject_deposit_action(deposit_id):
             (now_str, deposit_id)
         )
         conn.commit()
+
+        # Automatically update and clear buttons on the original Telegram alert message
+        if "telegram_message_id" in deposit.keys() and deposit["telegram_message_id"]:
+            try:
+                orig_msg_id = int(deposit["telegram_message_id"])
+                orig_chat_id = deposit["telegram_chat_id"] if ("telegram_chat_id" in deposit.keys() and deposit["telegram_chat_id"]) else ADMIN_CHAT_ID
+                tg_u = deposit["telegram_username"] if ("telegram_username" in deposit.keys() and deposit["telegram_username"]) else "Not Provided"
+                
+                updated_text = (
+                    "❌ <b>[PAYATE CC] DEPOSIT REJECTED</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    f"👤 <b>Account Name:</b> @{deposit['username']}\n"
+                    f"📱 <b>Telegram:</b> <b>{tg_u}</b>\n"
+                    f"💵 <b>Amount:</b> <b>${float(deposit['amount']):.2f} USD</b> ({deposit['currency']})\n"
+                    f"🏷️ <b>Ref ID:</b> <code>{deposit['trx_id']}</code>\n"
+                    f"🕒 <b>Rejected At:</b> {now_str} UTC\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "🔴 <b>Status:</b> <b>REJECTED BY ADMIN</b> <i>(via Telegram)</i>"
+                )
+                edit_admin_msg(orig_chat_id, orig_msg_id, updated_text, {"inline_keyboard": []})
+            except Exception:
+                pass
+
         conn.close()
         return True, f"Deposit #{deposit['trx_id']} marked as rejected."
     except Exception as e:
@@ -3152,12 +3203,12 @@ def process_callback_query(cq):
         dep_id = data.split(":", 1)[1]
         ok, res_msg = approve_deposit_action(dep_id)
         if ok:
-            answer_callback(cq_id, f"✅ Deposit #{dep_id} Approved!", show_alert=True)
+            answer_callback(cq_id, f"✅ Deposit #{dep_id} Approved!", show_alert=False)
             orig_text = msg.get("text") or ""
             if "NEW DEPOSIT" in orig_text or "PENDING DEPOSIT" in orig_text:
-                new_text = orig_text + f"\n\n✅ <b>[APPROVED - {res_msg}]</b>"
+                new_text = orig_text + f"\n\n✅ <b>[APPROVED & CREDITED]</b>"
                 edit_admin_msg(chat_id, message_id, new_text, {
-                    "inline_keyboard": [[{"text": "🔙 Open Admin Menu", "callback_data": "cmd:main_menu"}]]
+                    "inline_keyboard": []
                 })
             else:
                 t, k = build_pending_deposits_view()
@@ -3174,7 +3225,7 @@ def process_callback_query(cq):
             if "NEW DEPOSIT" in orig_text or "PENDING DEPOSIT" in orig_text:
                 new_text = orig_text + f"\n\n❌ <b>[REJECTED BY ADMIN]</b>"
                 edit_admin_msg(chat_id, message_id, new_text, {
-                    "inline_keyboard": [[{"text": "🔙 Open Admin Menu", "callback_data": "cmd:main_menu"}]]
+                    "inline_keyboard": []
                 })
             else:
                 t, k = build_pending_deposits_view()
@@ -3209,7 +3260,8 @@ def deposit_alert_monitor_loop():
         try:
             conn = get_db()
             c = conn.cursor()
-            c.execute("SELECT * FROM deposits WHERE status = 'pending' AND (admin_notes IS NULL OR admin_notes NOT LIKE '%[ALERTED]%')")
+            # Only select pending deposits that have NOT been alerted by Laravel or Python
+            c.execute("SELECT * FROM deposits WHERE status = 'pending' AND (telegram_message_id IS NULL OR telegram_message_id = '') AND (admin_notes IS NULL OR admin_notes NOT LIKE '%[ALERTED]%')")
             new_deposits = c.fetchall()
 
             for dep in new_deposits:
@@ -3244,13 +3296,19 @@ def deposit_alert_monitor_loop():
                     ]
                 }
 
-                send_admin_msg(alert_text, keyboard)
+                res = send_admin_msg(alert_text, keyboard)
+                sent_msg_id = None
+                if isinstance(res, dict) and res.get("ok"):
+                    sent_msg_id = res.get("result", {}).get("message_id")
 
-                # Mark as alerted in SQLite
+                # Mark as alerted in SQLite and store telegram_message_id & chat_id
                 now_str = get_now_utc()
                 curr_notes = dep["admin_notes"] or ""
                 new_notes = (curr_notes + " [ALERTED]").strip()
-                c.execute("UPDATE deposits SET admin_notes = ?, updated_at = ? WHERE id = ?", (new_notes, now_str, dep["id"]))
+                if "telegram_message_id" in dep.keys() and sent_msg_id:
+                    c.execute("UPDATE deposits SET admin_notes = ?, telegram_message_id = ?, telegram_chat_id = ?, updated_at = ? WHERE id = ?", (new_notes, str(sent_msg_id), str(ADMIN_CHAT_ID), now_str, dep["id"]))
+                else:
+                    c.execute("UPDATE deposits SET admin_notes = ?, updated_at = ? WHERE id = ?", (new_notes, now_str, dep["id"]))
                 conn.commit()
 
             conn.close()
